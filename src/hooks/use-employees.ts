@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { ApiResponse, Pagination, User } from '@/lib/types';
 
@@ -12,6 +12,12 @@ interface EmployeeListParams {
 interface EmployeeListResponse {
   users: User[];
   pagination: Pagination;
+}
+
+export interface EmployeePayload {
+  name: string;
+  email: string;
+  phone?: string;
 }
 
 const EMPLOYEE_KEYS = {
@@ -28,6 +34,44 @@ export function useEmployees(params: EmployeeListParams = {}) {
         params: { role: 'employee', ...params },
       });
       return data.data;
+    },
+  });
+}
+
+export function useCreateEmployee() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: EmployeePayload) => {
+      const { data } = await apiClient.post<ApiResponse<User>>('/users', payload);
+      return data.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: EMPLOYEE_KEYS.lists() });
+    },
+  });
+}
+
+export function useUpdateEmployee() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, payload }: { id: string; payload: Partial<EmployeePayload> }) => {
+      const { data } = await apiClient.put<ApiResponse<User>>(`/users/${id}`, payload);
+      return data.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: EMPLOYEE_KEYS.lists() });
+    },
+  });
+}
+
+export function useDeactivateEmployee() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await apiClient.delete(`/users/${id}`);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: EMPLOYEE_KEYS.lists() });
     },
   });
 }

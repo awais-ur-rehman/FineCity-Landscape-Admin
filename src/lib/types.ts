@@ -63,6 +63,18 @@ export interface PlantBatchPayload {
   notes?: string;
 }
 
+/** Care schedule create/update payload */
+export interface CareSchedulePayload {
+  batchId: string;
+  careType: CareType;
+  frequencyDays: number;
+  scheduledTime: string;
+  assignedTo: string[];
+  instructions?: string;
+  startDate: string;
+  isActive: boolean;
+}
+
 /** Care schedule */
 export interface CareSchedule {
   _id: string;

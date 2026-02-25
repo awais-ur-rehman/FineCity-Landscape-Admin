@@ -10,46 +10,41 @@ import { LoginPage } from '@/pages/login';
 import { DashboardPage } from '@/pages/dashboard';
 import { PlantBatchesPage } from '@/pages/plant-batches';
 import { PlantBatchDetailPage } from '@/pages/plant-batch-detail';
+import { CareSchedulesPage } from '@/pages/care-schedules';
+import { CareTasksPage } from '@/pages/care-tasks';
+import { EmployeesPage } from '@/pages/employees';
+import { SettingsPage } from '@/pages/settings';
 
 function isAuthenticated() {
   return !!localStorage.getItem(TOKEN_KEYS.ACCESS);
 }
 
-/** Root route — no UI, just an outlet */
 const rootRoute = createRootRoute();
 
-/** Login route — redirect to dashboard if already logged in */
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
   component: LoginPage,
   beforeLoad: () => {
-    if (isAuthenticated()) {
-      throw redirect({ to: '/' });
-    }
+    if (isAuthenticated()) throw redirect({ to: '/' });
   },
 });
 
-/** Authenticated layout route — wraps all protected pages */
 const authenticatedRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'authenticated',
   component: AppLayout,
   beforeLoad: () => {
-    if (!isAuthenticated()) {
-      throw redirect({ to: '/login' });
-    }
+    if (!isAuthenticated()) throw redirect({ to: '/login' });
   },
 });
 
-/** Dashboard */
 const dashboardRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/',
   component: DashboardPage,
 });
 
-/** Plant Batches */
 const plantBatchesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/plant-batches',
@@ -62,41 +57,30 @@ const plantBatchDetailRoute = createRoute({
   component: PlantBatchDetailPage,
 });
 
-/** Placeholder pages */
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <div>
-      <h1 className="text-2xl font-semibold">{title}</h1>
-      <p className="mt-2 text-muted-foreground">Coming soon.</p>
-    </div>
-  );
-}
-
 const careSchedulesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/care-schedules',
-  component: () => <PlaceholderPage title="Care Schedules" />,
+  component: CareSchedulesPage,
 });
 
 const careTasksRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/care-tasks',
-  component: () => <PlaceholderPage title="Care Tasks" />,
+  component: CareTasksPage,
 });
 
 const employeesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/employees',
-  component: () => <PlaceholderPage title="Employees" />,
+  component: EmployeesPage,
 });
 
 const settingsRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/settings',
-  component: () => <PlaceholderPage title="Settings" />,
+  component: SettingsPage,
 });
 
-/** Build the route tree */
 const routeTree = rootRoute.addChildren([
   loginRoute,
   authenticatedRoute.addChildren([
@@ -110,10 +94,8 @@ const routeTree = rootRoute.addChildren([
   ]),
 ]);
 
-/** Create the router instance */
 export const router = createRouter({ routeTree });
 
-/** Type declaration for type-safe routing */
 declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router;

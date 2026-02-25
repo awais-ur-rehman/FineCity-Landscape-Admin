@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { ApiResponse, Pagination, CareTask, TaskStats } from '@/lib/types';
 
@@ -53,5 +53,37 @@ export function useTaskStats(params: StatsParams) {
       return data.data;
     },
     enabled: !!params.from && !!params.to,
+  });
+}
+
+export function useCompleteTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, notes }: { id: string; notes?: string }) => {
+      const { data } = await apiClient.post<ApiResponse<CareTask>>(
+        `/care-tasks/${id}/complete`,
+        { notes },
+      );
+      return data.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: TASK_KEYS.all });
+    },
+  });
+}
+
+export function useSkipTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      const { data } = await apiClient.post<ApiResponse<CareTask>>(
+        `/care-tasks/${id}/skip`,
+        { reason },
+      );
+      return data.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: TASK_KEYS.all });
+    },
   });
 }
