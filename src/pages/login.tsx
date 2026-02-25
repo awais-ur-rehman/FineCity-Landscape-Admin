@@ -87,7 +87,7 @@ export function LoginPage() {
         </CardHeader>
         <CardContent>
           {step === 'email' ? (
-            <Form {...emailForm}>
+            <Form key="email-form" {...emailForm}>
               <form onSubmit={emailForm.handleSubmit(handleSendOtp)} className="space-y-4">
                 <FormField
                   control={emailForm.control}
@@ -109,7 +109,7 @@ export function LoginPage() {
               </form>
             </Form>
           ) : (
-            <Form {...otpForm}>
+            <Form key="otp-form" {...otpForm}>
               <form onSubmit={otpForm.handleSubmit(handleVerifyOtp)} className="space-y-4">
                 <FormField
                   control={otpForm.control}
