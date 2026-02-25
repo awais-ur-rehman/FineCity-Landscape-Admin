@@ -8,6 +8,8 @@ import { TOKEN_KEYS } from '@/lib/constants';
 import { AppLayout } from '@/components/layout/app-layout';
 import { LoginPage } from '@/pages/login';
 import { DashboardPage } from '@/pages/dashboard';
+import { PlantBatchesPage } from '@/pages/plant-batches';
+import { PlantBatchDetailPage } from '@/pages/plant-batch-detail';
 
 function isAuthenticated() {
   return !!localStorage.getItem(TOKEN_KEYS.ACCESS);
@@ -47,6 +49,19 @@ const dashboardRoute = createRoute({
   component: DashboardPage,
 });
 
+/** Plant Batches */
+const plantBatchesRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/plant-batches',
+  component: PlantBatchesPage,
+});
+
+const plantBatchDetailRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/plant-batches/$id',
+  component: PlantBatchDetailPage,
+});
+
 /** Placeholder pages */
 function PlaceholderPage({ title }: { title: string }) {
   return (
@@ -56,12 +71,6 @@ function PlaceholderPage({ title }: { title: string }) {
     </div>
   );
 }
-
-const plantBatchesRoute = createRoute({
-  getParentRoute: () => authenticatedRoute,
-  path: '/plant-batches',
-  component: () => <PlaceholderPage title="Plant Batches" />,
-});
 
 const careSchedulesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
@@ -93,6 +102,7 @@ const routeTree = rootRoute.addChildren([
   authenticatedRoute.addChildren([
     dashboardRoute,
     plantBatchesRoute,
+    plantBatchDetailRoute,
     careSchedulesRoute,
     careTasksRoute,
     employeesRoute,

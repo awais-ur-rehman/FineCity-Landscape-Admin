@@ -35,6 +35,10 @@ export const PLANT_CATEGORIES = [
 
 export type PlantCategory = (typeof PLANT_CATEGORIES)[number];
 
+export const ZONES = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
+
+export type Zone = (typeof ZONES)[number];
+
 export const TOKEN_KEYS = {
   ACCESS: 'fc_access_token',
   REFRESH: 'fc_refresh_token',
