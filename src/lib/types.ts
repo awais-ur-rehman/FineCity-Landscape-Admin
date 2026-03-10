@@ -55,7 +55,7 @@ export interface PlantBatchPayload {
   name: string;
   plantType: string;
   scientificName?: string;
-  category: PlantCategory;
+  category: string;
   quantity: number;
   zone: string;
   location: string;

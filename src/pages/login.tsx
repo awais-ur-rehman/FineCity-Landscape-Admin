@@ -57,7 +57,7 @@ export function LoginPage() {
       const response = await verifyOtp.mutateAsync({ email, otp: data.otp });
       const user = response.data.user;
 
-      if (user.role !== ROLES.ADMIN) {
+      if (user.role !== ROLES.ADMIN && user.role !== ROLES.SUPER_ADMIN) {
         toast.error('Access denied. Admin portal is for administrators only.');
         return;
       }

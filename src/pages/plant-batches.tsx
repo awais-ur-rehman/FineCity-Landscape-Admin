@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { usePlantBatches, useDeleteBatch } from '@/hooks/use-plant-batches';
+import { useZones } from '@/hooks/use-zones';
+import { useCategories } from '@/hooks/use-categories';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -11,11 +13,11 @@ import {
 } from '@/components/ui/select';
 import { BatchTable } from '@/components/plant-batches/batch-table';
 import { BatchForm } from '@/components/plant-batches/batch-form';
-import { PLANT_CATEGORIES, ZONES } from '@/lib/constants';
-import { capitalize } from '@/lib/utils';
 import { Plus, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import type { PlantBatch } from '@/lib/types';
+
+import { useBranch } from '@/hooks/use-branch';
 
 export function PlantBatchesPage() {
   const [search, setSearch] = useState('');
@@ -23,6 +25,7 @@ export function PlantBatchesPage() {
   const [category, setCategory] = useState<string>('');
   const [status, setStatus] = useState<string>('active');
   const [page, setPage] = useState(1);
+  const { currentBranch } = useBranch();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editBatch, setEditBatch] = useState<PlantBatch | null>(null);
@@ -32,12 +35,15 @@ export function PlantBatchesPage() {
     ...(zone && { zone }),
     ...(category && { category }),
     ...(status && { status }),
+    ...(currentBranch && { branchId: currentBranch._id }),
     page,
     limit: 20,
   };
 
   const { data, isLoading } = usePlantBatches(params);
   const deleteBatch = useDeleteBatch();
+  const { data: zones } = useZones({ branchId: currentBranch?._id });
+  const { data: categories } = useCategories();
 
   const handleEdit = (batch: PlantBatch) => {
     setEditBatch(batch);
@@ -95,9 +101,9 @@ export function PlantBatchesPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Zones</SelectItem>
-            {ZONES.map((z) => (
-              <SelectItem key={z} value={z}>
-                Zone {z}
+            {zones?.map((z) => (
+              <SelectItem key={z._id} value={z._id}>
+                {z.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -115,9 +121,9 @@ export function PlantBatchesPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            {PLANT_CATEGORIES.map((c) => (
-              <SelectItem key={c} value={c}>
-                {capitalize(c)}
+            {categories?.map((c) => (
+              <SelectItem key={c._id} value={c._id}>
+                {c.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -149,12 +155,16 @@ export function PlantBatchesPage() {
         onPageChange={setPage}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        zones={zones}
+        categories={categories}
       />
 
       <BatchForm
         open={formOpen}
         onClose={handleFormClose}
         batch={editBatch}
+        zones={zones}
+        categories={categories}
       />
     </div>
   );

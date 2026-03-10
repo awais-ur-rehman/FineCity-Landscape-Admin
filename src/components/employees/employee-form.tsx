@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v4';
@@ -11,6 +11,9 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { User } from '@/lib/types';
@@ -19,6 +22,7 @@ const employeeSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.email('Please enter a valid email'),
   phone: z.string().optional(),
+  role: z.enum(['admin', 'employee', 'super_admin']),
 });
 
 type FormValues = z.infer<typeof employeeSchema>;
@@ -34,28 +38,37 @@ export function EmployeeForm({ open, onClose, employee }: EmployeeFormProps) {
   const create = useCreateEmployee();
   const update = useUpdateEmployee();
 
+  const [role, setRole] = useState<'admin' | 'employee' | 'super_admin'>('employee');
+
   const form = useForm<FormValues>({
     resolver: zodResolver(employeeSchema),
-    defaultValues: { name: '', email: '', phone: '' },
+    defaultValues: { name: '', email: '', phone: '', role: 'employee' },
   });
 
   useEffect(() => {
     if (employee) {
-      form.reset({ name: employee.name, email: employee.email, phone: employee.phone ?? '' });
+      form.reset({
+        name: employee.name,
+        email: employee.email,
+        phone: employee.phone ?? '',
+        role: employee.role || 'employee',
+      });
+      setRole(employee.role || 'employee');
     } else {
-      form.reset({ name: '', email: '', phone: '' });
+      form.reset({ name: '', email: '', phone: '', role: 'employee' });
+      setRole('employee');
     }
   }, [employee, form]);
 
   const onSubmit = async (values: FormValues) => {
     try {
-      const payload = { ...values, phone: values.phone || undefined };
+      const payload = { ...values, phone: values.phone || undefined, role };
       if (isEdit) {
         await update.mutateAsync({ id: employee._id, payload });
-        toast.success('Employee updated');
+        toast.success('User updated');
       } else {
         await create.mutateAsync(payload);
-        toast.success('Employee created');
+        toast.success('User created');
       }
       onClose();
     } catch (err: unknown) {
@@ -82,6 +95,28 @@ export function EmployeeForm({ open, onClose, employee }: EmployeeFormProps) {
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl><Input placeholder="John Doe" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role</FormLabel>
+                  <Select onValueChange={(v) => { field.onChange(v); setRole(v as any); }} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="employee">Employee</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="super_admin">Super Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

@@ -7,12 +7,27 @@ const apiClient = axios.create({
   timeout: 15000,
 });
 
-/** Attach access token to every request */
+/** Attach access token and branch ID to every request */
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem(TOKEN_KEYS.ACCESS);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // Get current branch from zustand storage
+  try {
+    const branchStorage = localStorage.getItem('fc_branch_storage');
+    if (branchStorage) {
+      const parsed = JSON.parse(branchStorage);
+      const branchId = parsed.state?.currentBranch?._id;
+      if (branchId) {
+        config.headers['X-Branch-ID'] = branchId;
+      }
+    }
+  } catch {
+    // Ignore parsing errors
+  }
+
   return config;
 });
 

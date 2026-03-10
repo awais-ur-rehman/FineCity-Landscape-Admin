@@ -1,6 +1,7 @@
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
 
 export const ROLES = {
+  SUPER_ADMIN: 'super_admin',
   ADMIN: 'admin',
   EMPLOYEE: 'employee',
 } as const;

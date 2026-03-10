@@ -1,3 +1,5 @@
+import { BranchSelector } from './branch-selector';
+import { useAuth } from '@/hooks/use-auth';
 import { Link, useLocation } from '@tanstack/react-router';
 import {
   LayoutDashboard,
@@ -8,6 +10,12 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  FolderTree,
+  MapPin,
+  Droplets,
+  TreePine,
+  Building2,
+  FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -19,13 +27,26 @@ const navItems = [
   { to: '/plant-batches', label: 'Plant Batches', icon: Leaf },
   { to: '/care-schedules', label: 'Care Schedules', icon: CalendarClock },
   { to: '/care-tasks', label: 'Care Tasks', icon: ClipboardList },
-  { to: '/employees', label: 'Employees', icon: Users },
-  { to: '/settings', label: 'Settings', icon: Settings },
-] as const;
+];
+
+const masterDataItems = [
+  { to: '/categories', label: 'Categories', icon: FolderTree },
+  { to: '/zones', label: 'Zones', icon: MapPin },
+  { to: '/care-types', label: 'Care Types', icon: Droplets },
+  { to: '/plant-types', label: 'Plant Types', icon: TreePine },
+];
+
+const adminItems = [
+  { to: '/users', label: 'Users', icon: Users },
+  { to: '/branches', label: 'Branches', icon: Building2 },
+  { to: '/audit-logs', label: 'Audit Logs', icon: FileText },
+];
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   return (
     <aside
@@ -48,8 +69,11 @@ export function Sidebar() {
 
       <Separator className="bg-sidebar-border" />
 
+      {/* Branch Selector */}
+      <BranchSelector collapsed={collapsed} />
+
       {/* Nav */}
-      <nav className="flex-1 space-y-1 px-2 py-4">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-2">
         {navItems.map(({ to, label, icon: Icon }) => {
           const isActive =
             to === '/'
@@ -61,7 +85,7 @@ export function Sidebar() {
               key={to}
               to={to}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                 isActive
                   ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                   : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
@@ -73,15 +97,79 @@ export function Sidebar() {
             </Link>
           );
         })}
+
+        {!collapsed && (
+          <div className="mt-6 mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/40">
+            Master Data
+          </div>
+        )}
+        
+        {masterDataItems.map(({ to, label, icon: Icon }) => (
+          <Link
+            key={to}
+            to={to}
+            className={cn(
+              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+              location.pathname.startsWith(to)
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
+              collapsed && 'justify-center px-2',
+            )}
+          >
+            <Icon className="h-5 w-5 shrink-0" />
+            {!collapsed && <span>{label}</span>}
+          </Link>
+        ))}
+
+        {isAdmin && (
+          <>
+            {!collapsed && (
+              <div className="mt-6 mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/40">
+                Administration
+              </div>
+            )}
+            {adminItems.map(({ to, label, icon: Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  location.pathname.startsWith(to)
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
+                  collapsed && 'justify-center px-2',
+                )}
+              >
+                <Icon className="h-5 w-5 shrink-0" />
+                {!collapsed && <span>{label}</span>}
+              </Link>
+            ))}
+          </>
+        )}
       </nav>
 
-      {/* Collapse toggle */}
-      <div className="p-2">
+      {/* Settings (Pinned Bottom) */}
+      <div className="p-2 border-t border-sidebar-border">
+        <Link
+          to="/settings"
+          className={cn(
+            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+            location.pathname.startsWith('/settings')
+              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
+            collapsed && 'justify-center px-2',
+          )}
+        >
+          <Settings className="h-5 w-5 shrink-0" />
+          {!collapsed && <span>Settings</span>}
+        </Link>
+        
+        {/* Collapse toggle */}
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setCollapsed(!collapsed)}
-          className="w-full text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+          className="mt-2 w-full text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
         >
           {collapsed ? (
             <ChevronRight className="h-4 w-4" />

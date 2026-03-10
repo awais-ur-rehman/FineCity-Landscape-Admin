@@ -3,8 +3,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v4';
 import { useCreateBatch, useUpdateBatch } from '@/hooks/use-plant-batches';
-import { PLANT_CATEGORIES, ZONES } from '@/lib/constants';
-import { capitalize } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -31,12 +29,14 @@ import {
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { PlantBatch } from '@/lib/types';
+import type { Zone } from '@/hooks/use-zones';
+import type { Category } from '@/hooks/use-categories';
 
 const batchSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   plantType: z.string().min(1, 'Plant type is required'),
   scientificName: z.string().optional(),
-  category: z.enum(PLANT_CATEGORIES),
+  category: z.string().min(1, 'Category is required'),
   quantity: z.number().int().min(1, 'Quantity must be at least 1'),
   zone: z.string().min(1, 'Zone is required'),
   location: z.string().min(1, 'Location is required'),
@@ -50,15 +50,17 @@ interface BatchFormProps {
   open: boolean;
   onClose: () => void;
   batch: PlantBatch | null;
+  zones?: Zone[];
+  categories?: Category[];
 }
 
-export function BatchForm({ open, onClose, batch }: BatchFormProps) {
+export function BatchForm({ open, onClose, batch, zones, categories }: BatchFormProps) {
   const isEdit = !!batch;
   const createBatch = useCreateBatch();
   const updateBatch = useUpdateBatch();
 
   const emptyDefaults: BatchFormValues = {
-    name: '', plantType: '', scientificName: '', category: 'indoor',
+    name: '', plantType: '', scientificName: '', category: '',
     quantity: 1, zone: '', location: '', imageUrl: '', notes: '',
   };
 
@@ -172,9 +174,9 @@ export function BatchForm({ open, onClose, batch }: BatchFormProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {PLANT_CATEGORIES.map((c) => (
-                          <SelectItem key={c} value={c}>
-                            {capitalize(c)}
+                        {categories?.map((c) => (
+                          <SelectItem key={c._id} value={c._id}>
+                            {c.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -216,9 +218,9 @@ export function BatchForm({ open, onClose, batch }: BatchFormProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {ZONES.map((z) => (
-                          <SelectItem key={z} value={z}>
-                            Zone {z}
+                        {zones?.map((z) => (
+                          <SelectItem key={z._id} value={z._id}>
+                            {z.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

@@ -8,6 +8,7 @@ interface User {
   email: string;
   name: string;
   role: string;
+  phone?: string;
 }
 
 interface AuthState {
@@ -60,7 +61,7 @@ export function useAuth() {
     onSuccess: (response) => {
       const { accessToken, refreshToken, user } = response.data;
 
-      if (user.role !== ROLES.ADMIN) {
+      if (user.role !== ROLES.ADMIN && user.role !== ROLES.SUPER_ADMIN) {
         throw new Error('Access denied. Admin only.');
       }
 
@@ -85,6 +86,7 @@ export function useAuth() {
       localStorage.removeItem(TOKEN_KEYS.ACCESS);
       localStorage.removeItem(TOKEN_KEYS.REFRESH);
       localStorage.removeItem(TOKEN_KEYS.USER);
+      localStorage.removeItem('fc_branch_storage'); // Clear branch selection
       setAuthState({ user: null, isAuthenticated: false, isLoading: false });
       window.location.href = '/login';
     }

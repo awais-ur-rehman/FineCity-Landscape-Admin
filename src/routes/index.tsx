@@ -14,6 +14,12 @@ import { CareSchedulesPage } from '@/pages/care-schedules';
 import { CareTasksPage } from '@/pages/care-tasks';
 import { EmployeesPage } from '@/pages/employees';
 import { SettingsPage } from '@/pages/settings';
+import { CategoriesPage } from '@/pages/categories';
+import { ZonesPage } from '@/pages/zones';
+import { CareTypesPage } from '@/pages/care-types';
+import { PlantTypesPage } from '@/pages/plant-types';
+import { BranchesPage } from '@/pages/branches';
+import { AuditLogsPage } from '@/pages/audit-logs';
 
 function isAuthenticated() {
   return !!localStorage.getItem(TOKEN_KEYS.ACCESS);
@@ -71,7 +77,14 @@ const careTasksRoute = createRoute({
 
 const employeesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
-  path: '/employees',
+  path: '/employees', // Keep /employees for now, but link to /users in sidebar if needed, or map both
+  component: EmployeesPage,
+});
+
+// Map /users to EmployeesPage for now as they are essentially the same
+const usersRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/users',
   component: EmployeesPage,
 });
 
@@ -79,6 +92,42 @@ const settingsRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/settings',
   component: SettingsPage,
+});
+
+const categoriesRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/categories',
+  component: CategoriesPage,
+});
+
+const zonesRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/zones',
+  component: ZonesPage,
+});
+
+const careTypesRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/care-types',
+  component: CareTypesPage,
+});
+
+const plantTypesRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/plant-types',
+  component: PlantTypesPage,
+});
+
+const branchesRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/branches',
+  component: BranchesPage,
+});
+
+const auditLogsRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/audit-logs',
+  component: AuditLogsPage,
 });
 
 const routeTree = rootRoute.addChildren([
@@ -90,7 +139,14 @@ const routeTree = rootRoute.addChildren([
     careSchedulesRoute,
     careTasksRoute,
     employeesRoute,
+    usersRoute,
     settingsRoute,
+    categoriesRoute,
+    zonesRoute,
+    careTypesRoute,
+    plantTypesRoute,
+    branchesRoute,
+    auditLogsRoute,
   ]),
 ]);
 

@@ -3,7 +3,8 @@ import { format, startOfDay, endOfDay } from 'date-fns';
 import { useCareTasks, useTaskStats, useCompleteTask, useSkipTask } from '@/hooks/use-care-tasks';
 import { usePlantBatches } from '@/hooks/use-plant-batches';
 import { useEmployees } from '@/hooks/use-employees';
-import { CARE_TYPES, TASK_STATUSES } from '@/lib/constants';
+import { useCareTypes } from '@/hooks/use-care-types';
+import { TASK_STATUSES } from '@/lib/constants';
 import { capitalize, careTypeColor, statusColor, formatDate } from '@/lib/utils';
 import { TaskStatsBar } from '@/components/tasks/task-stats-bar';
 import { SkipDialog } from '@/components/tasks/skip-dialog';
@@ -24,7 +25,10 @@ import {
 import { MoreHorizontal, CheckCircle2, SkipForward } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { useBranch } from '@/hooks/use-branch';
+
 export function CareTasksPage() {
+  const { currentBranch } = useBranch();
   const today = useMemo(() => new Date(), []);
   const [dateFrom, setDateFrom] = useState(format(today, 'yyyy-MM-dd'));
   const [dateTo, setDateTo] = useState(format(today, 'yyyy-MM-dd'));
@@ -39,6 +43,7 @@ export function CareTasksPage() {
   const statsParams = {
     from: format(startOfDay(new Date(dateFrom)), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
     to: format(endOfDay(new Date(dateTo)), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
+    ...(currentBranch && { branchId: currentBranch._id }),
   };
 
   const stats = useTaskStats(statsParams);
@@ -47,16 +52,27 @@ export function CareTasksPage() {
     ...(careType && { careType }),
     ...(batchId && { batchId }),
     ...(assignedTo && { assignedTo }),
+    ...(currentBranch && { branchId: currentBranch._id }),
     from: statsParams.from,
     to: statsParams.to,
     page,
     limit: 50,
   });
 
-  const batches = usePlantBatches({ status: 'active', limit: 100 });
-  const employees = useEmployees({ limit: 100 });
+  const batches = usePlantBatches({ 
+    status: 'active', 
+    limit: 100,
+    ...(currentBranch && { branchId: currentBranch._id })
+  });
+  const employees = useEmployees({ 
+    limit: 100,
+    ...(currentBranch && { branchId: currentBranch._id })
+  });
+  const { data: careTypes } = useCareTypes();
   const complete = useCompleteTask();
   const skip = useSkipTask();
+
+  const getCareTypeName = (id: string) => careTypes?.find(c => c._id === id)?.name || id;
 
   const handleComplete = async (id: string) => {
     try {
@@ -125,7 +141,7 @@ export function CareTasksPage() {
           <SelectTrigger className="w-36"><SelectValue placeholder="Care Type" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
-            {CARE_TYPES.map((c) => <SelectItem key={c} value={c}>{capitalize(c)}</SelectItem>)}
+            {careTypes?.map((c) => <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={batchId} onValueChange={(v) => { setBatchId(v === 'all' ? '' : v); setPage(1); }}>
@@ -201,7 +217,7 @@ export function CareTasksPage() {
                     <TableCell className="whitespace-nowrap text-sm">{formatDate(task.scheduledAt)}</TableCell>
                     <TableCell className="font-medium">{task.batchId.name}</TableCell>
                     <TableCell>
-                      <Badge className={careTypeColor(task.careType)}>{capitalize(task.careType)}</Badge>
+                      <Badge className={careTypeColor(task.careType)}>{getCareTypeName(task.careType)}</Badge>
                     </TableCell>
                     <TableCell>
                       <Badge className={statusColor(task.status)}>{capitalize(task.status)}</Badge>
