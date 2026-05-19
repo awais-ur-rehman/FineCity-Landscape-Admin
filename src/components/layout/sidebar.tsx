@@ -16,6 +16,7 @@ import {
   TreePine,
   Building2,
   FileText,
+  BarChart2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -27,6 +28,7 @@ const navItems = [
   { to: '/plant-batches', label: 'Plant Batches', icon: Leaf },
   { to: '/care-schedules', label: 'Care Schedules', icon: CalendarClock },
   { to: '/care-tasks', label: 'Care Tasks', icon: ClipboardList },
+  { to: '/fertilizers', label: 'Fertilizers', icon: Droplets },
 ];
 
 const masterDataItems = [
@@ -38,8 +40,12 @@ const masterDataItems = [
 
 const adminItems = [
   { to: '/users', label: 'Users', icon: Users },
-  { to: '/branches', label: 'Branches', icon: Building2 },
+  { to: '/reports', label: 'Reports', icon: BarChart2 },
   { to: '/audit-logs', label: 'Audit Logs', icon: FileText },
+];
+
+const superAdminItems = [
+  { to: '/branches', label: 'Branches', icon: Building2 },
 ];
 
 export function Sidebar() {
@@ -47,6 +53,7 @@ export function Sidebar() {
   const location = useLocation();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const isSuperAdmin = user?.role === 'super_admin';
 
   return (
     <aside
@@ -129,6 +136,22 @@ export function Sidebar() {
               </div>
             )}
             {adminItems.map(({ to, label, icon: Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  location.pathname.startsWith(to)
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
+                  collapsed && 'justify-center px-2',
+                )}
+              >
+                <Icon className="h-5 w-5 shrink-0" />
+                {!collapsed && <span>{label}</span>}
+              </Link>
+            ))}
+            {isSuperAdmin && superAdminItems.map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
                 to={to}

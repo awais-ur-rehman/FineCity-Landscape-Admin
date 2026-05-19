@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { useCreateSchedule, useUpdateSchedule } from '@/hooks/use-care-schedules';
 import { usePlantBatches } from '@/hooks/use-plant-batches';
 import { useEmployees } from '@/hooks/use-employees';
+import { useFertilizers } from '@/hooks/use-fertilizers';
 import { CARE_TYPES } from '@/lib/constants';
 import { capitalize, careTypeColor } from '@/lib/utils';
 import {
@@ -31,6 +32,7 @@ const scheduleSchema = z.object({
   frequencyDays: z.number().int().min(1).max(365),
   scheduledTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Must be HH:mm format'),
   assignedTo: z.array(z.string()),
+  recommendedFertilizers: z.array(z.string()).optional(),
   instructions: z.string().optional(),
   startDate: z.string().min(1, 'Start date is required'),
   isActive: z.boolean(),
@@ -50,10 +52,11 @@ export function ScheduleForm({ open, onClose, schedule }: ScheduleFormProps) {
   const update = useUpdateSchedule();
   const batches = usePlantBatches({ status: 'active', limit: 100 });
   const employees = useEmployees({ limit: 100 });
+  const { data: fertilizers } = useFertilizers({ isActive: true });
 
   const defaults: FormValues = {
     batchId: '', careType: 'watering', frequencyDays: 3, scheduledTime: '08:00',
-    assignedTo: [], instructions: '', startDate: format(new Date(), 'yyyy-MM-dd'), isActive: true,
+    assignedTo: [], recommendedFertilizers: [], instructions: '', startDate: format(new Date(), 'yyyy-MM-dd'), isActive: true,
   };
 
   const form = useForm<FormValues>({
@@ -69,6 +72,7 @@ export function ScheduleForm({ open, onClose, schedule }: ScheduleFormProps) {
         frequencyDays: schedule.frequencyDays,
         scheduledTime: schedule.scheduledTime,
         assignedTo: schedule.assignedTo.map((u) => u._id),
+        recommendedFertilizers: schedule.recommendedFertilizers?.map((f) => f._id) || [],
         instructions: schedule.instructions ?? '',
         startDate: format(new Date(schedule.startDate), 'yyyy-MM-dd'),
         isActive: schedule.isActive,
@@ -102,6 +106,8 @@ export function ScheduleForm({ open, onClose, schedule }: ScheduleFormProps) {
 
   const isPending = create.isPending || update.isPending;
   const selectedEmployees = form.watch('assignedTo');
+  const selectedFertilizers = form.watch('recommendedFertilizers') || [];
+  const currentCareType = form.watch('careType');
 
   const toggleEmployee = (empId: string) => {
     const current = form.getValues('assignedTo');
@@ -109,6 +115,15 @@ export function ScheduleForm({ open, onClose, schedule }: ScheduleFormProps) {
       form.setValue('assignedTo', current.filter((id) => id !== empId));
     } else {
       form.setValue('assignedTo', [...current, empId]);
+    }
+  };
+
+  const toggleFertilizer = (fertId: string) => {
+    const current = form.getValues('recommendedFertilizers') || [];
+    if (current.includes(fertId)) {
+      form.setValue('recommendedFertilizers', current.filter((id) => id !== fertId));
+    } else {
+      form.setValue('recommendedFertilizers', [...current, fertId]);
     }
   };
 
@@ -129,7 +144,7 @@ export function ScheduleForm({ open, onClose, schedule }: ScheduleFormProps) {
                   <SelectContent>
                     {batches.data?.batches.map((b) => (
                       <SelectItem key={b._id} value={b._id}>
-                        {b.name} — Zone {b.zone}
+                        {b.name} — Zone {typeof b.zone === 'object' ? b.zone.name : b.zone}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -175,6 +190,27 @@ export function ScheduleForm({ open, onClose, schedule }: ScheduleFormProps) {
                 </FormItem>
               )} />
             </div>
+
+            {/* Fertilizers multi-select (Only if careType === 'fertilizing') */}
+            {currentCareType === 'fertilizing' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Recommended Fertilizers</label>
+                <div className="flex flex-wrap gap-2 rounded-lg border p-3">
+                  {fertilizers?.length ? fertilizers.map((fert) => (
+                    <Badge
+                      key={fert._id}
+                      variant={selectedFertilizers.includes(fert._id) ? 'default' : 'outline'}
+                      className="cursor-pointer"
+                      onClick={() => toggleFertilizer(fert._id)}
+                    >
+                      {fert.name}
+                    </Badge>
+                  )) : (
+                    <span className="text-xs text-muted-foreground">No fertilizers found</span>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2">
               {/* Time */}

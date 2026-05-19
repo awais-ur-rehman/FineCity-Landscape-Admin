@@ -8,16 +8,23 @@ export interface Branch {
   code: string;
   location: string;
   isActive: boolean;
-  phone?: string;
-  email?: string;
+  contactPerson?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+}
+
+interface BranchesResponse {
+  branches: Branch[];
+  pagination: { total: number; page: number; limit: number; pages: number };
 }
 
 export function useBranches() {
   return useQuery({
     queryKey: ['branches'],
     queryFn: async () => {
-      const { data } = await apiClient.get<ApiResponse<Branch[]>>('/branches');
-      return data.data;
+      const { data } = await apiClient.get<ApiResponse<BranchesResponse>>('/branches');
+      const payload = data.data as BranchesResponse | Branch[];
+      return Array.isArray(payload) ? payload : (payload?.branches ?? []);
     },
   });
 }

@@ -1,29 +1,30 @@
-import { useState } from 'react';
-import { usePlantBatches, useDeleteBatch } from '@/hooks/use-plant-batches';
-import { useZones } from '@/hooks/use-zones';
-import { useCategories } from '@/hooks/use-categories';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useState } from "react";
+import { usePlantBatches, useDeleteBatch } from "@/hooks/use-plant-batches";
+import { useZones } from "@/hooks/use-zones";
+import { useCategories } from "@/hooks/use-categories";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { BatchTable } from '@/components/plant-batches/batch-table';
-import { BatchForm } from '@/components/plant-batches/batch-form';
-import { Plus, Search } from 'lucide-react';
-import { toast } from 'sonner';
-import type { PlantBatch } from '@/lib/types';
+} from "@/components/ui/select";
+import { BatchTable } from "@/components/plant-batches/batch-table";
+import { BatchForm } from "@/components/plant-batches/batch-form";
+import { Plus, Search, Download } from "lucide-react";
+import apiClient from "@/lib/api-client";
+import { toast } from "sonner";
+import type { PlantBatch } from "@/lib/types";
 
-import { useBranch } from '@/hooks/use-branch';
+import { useBranch } from "@/hooks/use-branch";
 
 export function PlantBatchesPage() {
-  const [search, setSearch] = useState('');
-  const [zone, setZone] = useState<string>('');
-  const [category, setCategory] = useState<string>('');
-  const [status, setStatus] = useState<string>('active');
+  const [search, setSearch] = useState("");
+  const [zone, setZone] = useState<string>("");
+  const [category, setCategory] = useState<string>("");
+  const [status, setStatus] = useState<string>("active");
   const [page, setPage] = useState(1);
   const { currentBranch } = useBranch();
 
@@ -53,9 +54,9 @@ export function PlantBatchesPage() {
   const handleDelete = async (id: string) => {
     try {
       await deleteBatch.mutateAsync(id);
-      toast.success('Plant batch deleted');
+      toast.success("Plant batch deleted");
     } catch {
-      toast.error('Failed to delete batch');
+      toast.error("Failed to delete batch");
     }
   };
 
@@ -64,14 +65,40 @@ export function PlantBatchesPage() {
     setEditBatch(null);
   };
 
+  const handleExport = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (currentBranch) params.set("branchId", currentBranch._id);
+      const res = await apiClient.get(`/plant-batches/export?${params}`, {
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(
+        new Blob([res.data as BlobPart], { type: "text/csv" }),
+      );
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "plant-batches.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Export failed");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Plant Batches</h1>
-        <Button onClick={() => setFormOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Batch
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+          <Button onClick={() => setFormOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Batch
+          </Button>
+        </div>
       </div>
 
       {/* Filter bar */}
@@ -92,7 +119,7 @@ export function PlantBatchesPage() {
         <Select
           value={zone}
           onValueChange={(v) => {
-            setZone(v === 'all' ? '' : v);
+            setZone(v === "all" ? "" : v);
             setPage(1);
           }}
         >
@@ -112,7 +139,7 @@ export function PlantBatchesPage() {
         <Select
           value={category}
           onValueChange={(v) => {
-            setCategory(v === 'all' ? '' : v);
+            setCategory(v === "all" ? "" : v);
             setPage(1);
           }}
         >
@@ -132,7 +159,7 @@ export function PlantBatchesPage() {
         <Select
           value={status}
           onValueChange={(v) => {
-            setStatus(v === 'all' ? '' : v);
+            setStatus(v === "all" ? "" : v);
             setPage(1);
           }}
         >

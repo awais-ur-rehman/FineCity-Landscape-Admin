@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuditLogs } from '@/hooks/use-audit-logs';
+import type { AuditLog } from '@/hooks/use-audit-logs';
 import { useBranch } from '@/hooks/use-branch';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,9 +10,66 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDateShort } from '@/lib/utils';
 import { Search } from 'lucide-react';
+
+/** Convert details object into readable lines, e.g. "Reason: test" */
+function formatDetailsSummary(details?: Record<string, unknown>): string {
+  if (!details || Object.keys(details).length === 0) return '—';
+  const lines = Object.entries(details)
+    .filter(([, v]) => v !== null && v !== undefined && v !== '')
+    .map(([k, v]) => {
+      const label = k.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ');
+      const labelCap = label.charAt(0).toUpperCase() + label.slice(1);
+      return `${labelCap}: ${v}`;
+    });
+  return lines.join(' · ') || '—';
+}
+
+function DetailsCell({ log }: { log: AuditLog }) {
+  const [open, setOpen] = useState(false);
+  const summary = formatDetailsSummary(log.details);
+  const hasDetails = summary !== '—';
+
+  return (
+    <>
+      <button
+        type="button"
+        disabled={!hasDetails}
+        onClick={() => hasDetails && setOpen(true)}
+        className="text-left text-sm text-muted-foreground line-clamp-2 max-w-xs hover:text-foreground transition-colors disabled:cursor-default"
+      >
+        {summary}
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Log Details</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-1">
+            {Object.entries(log.details ?? {})
+              .filter(([, v]) => v !== null && v !== undefined && v !== '')
+              .map(([k, v]) => {
+                const label = k.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ');
+                const labelCap = label.charAt(0).toUpperCase() + label.slice(1);
+                return (
+                  <div key={k}>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{labelCap}</p>
+                    <p className="mt-0.5 text-sm text-foreground break-words">{String(v)}</p>
+                  </div>
+                );
+              })}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
 
 export function AuditLogsPage() {
   const [search, setSearch] = useState('');
@@ -56,10 +114,12 @@ export function AuditLogsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Actions</SelectItem>
-            <SelectItem value="create">Create</SelectItem>
-            <SelectItem value="update">Update</SelectItem>
-            <SelectItem value="delete">Delete</SelectItem>
-            <SelectItem value="login">Login</SelectItem>
+            <SelectItem value="CREATE">Create</SelectItem>
+            <SelectItem value="UPDATE">Update</SelectItem>
+            <SelectItem value="DELETE">Delete</SelectItem>
+            <SelectItem value="LOGIN">Login</SelectItem>
+            <SelectItem value="COMPLETE">Complete</SelectItem>
+            <SelectItem value="SKIP">Skip</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -71,7 +131,7 @@ export function AuditLogsPage() {
               <TableHead>Time</TableHead>
               <TableHead>User</TableHead>
               <TableHead>Action</TableHead>
-              <TableHead>Entity Type</TableHead>
+              <TableHead>Entity</TableHead>
               <TableHead>Details</TableHead>
             </TableRow>
           </TableHeader>
@@ -105,13 +165,13 @@ export function AuditLogsPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="capitalize font-medium text-sm">{log.action}</span>
+                    <span className="capitalize font-medium text-sm">{log.action.toLowerCase()}</span>
                   </TableCell>
                   <TableCell>
-                    <span className="capitalize text-sm">{log.entityType.replace('_', ' ')}</span>
+                    <span className="text-sm">{(log.entity ?? '').replace('_', ' ')}</span>
                   </TableCell>
-                  <TableCell className="text-xs font-mono text-muted-foreground max-w-xs truncate">
-                    {JSON.stringify(log.details)}
+                  <TableCell className="max-w-xs">
+                    <DetailsCell log={log} />
                   </TableCell>
                 </TableRow>
               ))
@@ -126,12 +186,7 @@ export function AuditLogsPage() {
             Page {page} of {data.pagination.pages} ({data.pagination.total} logs)
           </p>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-            >
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
               Previous
             </Button>
             <Button

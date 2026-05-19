@@ -9,6 +9,7 @@ import { OverdueAlert } from '@/components/dashboard/overdue-alert';
 import { CompletionChart } from '@/components/dashboard/completion-chart';
 import { WeeklyTrend } from '@/components/dashboard/weekly-trend';
 import { RecentActivity } from '@/components/dashboard/recent-activity';
+import { EmployeeLeaderboard } from '@/components/dashboard/employee-leaderboard';
 
 export function DashboardPage() {
   const [overdueHidden, setOverdueHidden] = useState(false);
@@ -76,11 +77,14 @@ export function DashboardPage() {
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <CompletionChart stats={todayStats.data} isLoading={todayStats.isLoading} />
+        <CompletionChart />
         <WeeklyTrend weekStats={weekStats.data} isLoading={weekStats.isLoading} />
       </div>
 
-      <RecentActivity tasks={recentTasks.data?.tasks ?? []} isLoading={recentTasks.isLoading} />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <EmployeeLeaderboard weekStats={weekStats.data} isLoading={weekStats.isLoading} />
+        <RecentActivity tasks={recentTasks.data?.tasks ?? []} isLoading={recentTasks.isLoading} />
+      </div>
     </div>
   );
 }

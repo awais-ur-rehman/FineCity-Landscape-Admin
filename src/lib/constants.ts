@@ -8,10 +8,10 @@ export const ROLES = {
 
 export const CARE_TYPES = [
   'watering',
-  'fertilizer',
+  'fertilizing',
   'pruning',
+  'pest_control',
   'repotting',
-  'general',
 ] as const;
 
 export type CareType = (typeof CARE_TYPES)[number];

@@ -24,8 +24,9 @@ const branchSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   code: z.string().min(1, 'Code is required'),
   location: z.string().min(1, 'Location is required'),
-  phone: z.string().optional(),
-  email: z.string().email().optional().or(z.literal('')),
+  contactPerson: z.string().min(1, 'Contact person is required'),
+  contactEmail: z.string().email('Enter a valid email'),
+  contactPhone: z.string().optional(),
 });
 
 type BranchFormValues = z.infer<typeof branchSchema>;
@@ -46,8 +47,9 @@ export function BranchesPage() {
       name: '',
       code: '',
       location: '',
-      phone: '',
-      email: '',
+      contactPerson: '',
+      contactEmail: '',
+      contactPhone: '',
     },
   });
 
@@ -62,8 +64,9 @@ export function BranchesPage() {
       name: branch.name,
       code: branch.code,
       location: branch.location,
-      phone: branch.phone || '',
-      email: branch.email || '',
+      contactPerson: branch.contactPerson || '',
+      contactEmail: branch.contactEmail || '',
+      contactPhone: branch.contactPhone || '',
     });
     setFormOpen(true);
   };
@@ -146,9 +149,10 @@ export function BranchesPage() {
                   <TableCell>{branch.code}</TableCell>
                   <TableCell>{branch.location}</TableCell>
                   <TableCell>
-                    <div className="flex flex-col text-xs text-muted-foreground">
-                      <span>{branch.email}</span>
-                      <span>{branch.phone}</span>
+                    <div className="flex flex-col text-xs">
+                      <span className="font-medium">{branch.contactPerson}</span>
+                      <span className="text-muted-foreground">{branch.contactEmail}</span>
+                      {branch.contactPhone && <span className="text-muted-foreground">{branch.contactPhone}</span>}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -233,13 +237,27 @@ export function BranchesPage() {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="contactPerson"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contact Person</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="email"
+                  name="contactEmail"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>Contact Email</FormLabel>
                       <FormControl>
                         <Input placeholder="branch@example.com" type="email" {...field} />
                       </FormControl>
@@ -249,12 +267,12 @@ export function BranchesPage() {
                 />
                 <FormField
                   control={form.control}
-                  name="phone"
+                  name="contactPhone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone</FormLabel>
+                      <FormLabel>Contact Phone</FormLabel>
                       <FormControl>
-                        <Input placeholder="+1 234 567 890" {...field} />
+                        <Input placeholder="+971 50 000 0000" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

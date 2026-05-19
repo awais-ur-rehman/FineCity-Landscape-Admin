@@ -4,7 +4,8 @@ import {
   createRoute,
   redirect,
 } from '@tanstack/react-router';
-import { TOKEN_KEYS } from '@/lib/constants';
+import { TOKEN_KEYS, ROLES } from '@/lib/constants';
+import type { AuthUser } from '@/hooks/use-auth';
 import { AppLayout } from '@/components/layout/app-layout';
 import { LoginPage } from '@/pages/login';
 import { DashboardPage } from '@/pages/dashboard';
@@ -12,6 +13,7 @@ import { PlantBatchesPage } from '@/pages/plant-batches';
 import { PlantBatchDetailPage } from '@/pages/plant-batch-detail';
 import { CareSchedulesPage } from '@/pages/care-schedules';
 import { CareTasksPage } from '@/pages/care-tasks';
+import { FertilizersPage } from '@/pages/fertilizers';
 import { EmployeesPage } from '@/pages/employees';
 import { SettingsPage } from '@/pages/settings';
 import { CategoriesPage } from '@/pages/categories';
@@ -20,9 +22,26 @@ import { CareTypesPage } from '@/pages/care-types';
 import { PlantTypesPage } from '@/pages/plant-types';
 import { BranchesPage } from '@/pages/branches';
 import { AuditLogsPage } from '@/pages/audit-logs';
+import { ReportsPage } from '@/pages/reports';
 
-function isAuthenticated() {
+function isAuthenticated(): boolean {
   return !!localStorage.getItem(TOKEN_KEYS.ACCESS);
+}
+
+function getStoredUser(): AuthUser | null {
+  try {
+    const raw = localStorage.getItem(TOKEN_KEYS.USER);
+    return raw ? (JSON.parse(raw) as AuthUser) : null;
+  } catch {
+    return null;
+  }
+}
+
+function requireRole(...roles: Array<'super_admin' | 'admin' | 'employee'>) {
+  const user = getStoredUser();
+  if (!user || !roles.includes(user.role)) {
+    throw redirect({ to: '/' });
+  }
 }
 
 const rootRoute = createRootRoute();
@@ -73,15 +92,23 @@ const careTasksRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/care-tasks',
   component: CareTasksPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    status: typeof search.status === 'string' ? search.status : undefined,
+  }),
+});
+
+const fertilizersRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/fertilizers',
+  component: FertilizersPage,
 });
 
 const employeesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
-  path: '/employees', // Keep /employees for now, but link to /users in sidebar if needed, or map both
+  path: '/employees',
   component: EmployeesPage,
 });
 
-// Map /users to EmployeesPage for now as they are essentially the same
 const usersRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/users',
@@ -118,26 +145,50 @@ const plantTypesRoute = createRoute({
   component: PlantTypesPage,
 });
 
+/** Branches — super_admin only */
 const branchesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/branches',
   component: BranchesPage,
+  beforeLoad: () => requireRole(ROLES.SUPER_ADMIN),
 });
 
+/** Audit Logs — admin + super_admin only */
 const auditLogsRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/audit-logs',
   component: AuditLogsPage,
+  beforeLoad: () => requireRole(ROLES.SUPER_ADMIN, ROLES.ADMIN),
+});
+
+/** Reports — admin + super_admin only */
+const reportsRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/reports',
+  component: ReportsPage,
+  beforeLoad: () => requireRole(ROLES.SUPER_ADMIN, ROLES.ADMIN),
+});
+
+/** Catch-all: unknown paths redirect to / (auth guard on authenticatedRoute handles the rest) */
+const notFoundRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '*',
+  beforeLoad: () => {
+    throw redirect({ to: '/' });
+  },
+  component: () => null,
 });
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
+  notFoundRoute,
   authenticatedRoute.addChildren([
     dashboardRoute,
     plantBatchesRoute,
     plantBatchDetailRoute,
     careSchedulesRoute,
     careTasksRoute,
+    fertilizersRoute,
     employeesRoute,
     usersRoute,
     settingsRoute,
@@ -147,6 +198,7 @@ const routeTree = rootRoute.addChildren([
     plantTypesRoute,
     branchesRoute,
     auditLogsRoute,
+    reportsRoute,
   ]),
 ]);
 

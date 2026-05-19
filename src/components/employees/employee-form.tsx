@@ -3,6 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v4';
 import { useCreateEmployee, useUpdateEmployee } from '@/hooks/use-employees';
+import { useBranch } from '@/hooks/use-branch';
+import { useAuth } from '@/hooks/use-auth';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -22,7 +24,8 @@ const employeeSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.email('Please enter a valid email'),
   phone: z.string().optional(),
-  role: z.enum(['admin', 'employee', 'super_admin']),
+  role: z.enum(['admin', 'employee', 'super_admin']).default('employee'),
+  password: z.string().min(8, 'Password must be at least 8 characters').optional(),
 });
 
 type FormValues = z.infer<typeof employeeSchema>;
@@ -37,12 +40,15 @@ export function EmployeeForm({ open, onClose, employee }: EmployeeFormProps) {
   const isEdit = !!employee;
   const create = useCreateEmployee();
   const update = useUpdateEmployee();
+  const { currentBranch } = useBranch();
+  const { user: currentUser } = useAuth();
+  const isSuperAdmin = currentUser?.role === 'super_admin';
 
   const [role, setRole] = useState<'admin' | 'employee' | 'super_admin'>('employee');
 
   const form = useForm<FormValues>({
     resolver: zodResolver(employeeSchema),
-    defaultValues: { name: '', email: '', phone: '', role: 'employee' },
+    defaultValues: { name: '', email: '', phone: '', role: 'employee', password: '' },
   });
 
   useEffect(() => {
@@ -52,17 +58,24 @@ export function EmployeeForm({ open, onClose, employee }: EmployeeFormProps) {
         email: employee.email,
         phone: employee.phone ?? '',
         role: employee.role || 'employee',
+        password: '',
       });
       setRole(employee.role || 'employee');
     } else {
-      form.reset({ name: '', email: '', phone: '', role: 'employee' });
+      form.reset({ name: '', email: '', phone: '', role: 'employee', password: '' });
       setRole('employee');
     }
   }, [employee, form]);
 
   const onSubmit = async (values: FormValues) => {
     try {
-      const payload = { ...values, phone: values.phone || undefined, role };
+      const payload = {
+        ...values,
+        phone: values.phone || undefined,
+        role,
+        branches: currentBranch ? [currentBranch._id] : undefined,
+        ...(!isEdit && { password: values.password || 'Finecity@123' }),
+      };
       if (isEdit) {
         await update.mutateAsync({ id: employee._id, payload });
         toast.success('User updated');
@@ -113,8 +126,8 @@ export function EmployeeForm({ open, onClose, employee }: EmployeeFormProps) {
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="employee">Employee</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="super_admin">Super Admin</SelectItem>
+                      {isSuperAdmin && <SelectItem value="admin">Admin</SelectItem>}
+                      {isSuperAdmin && <SelectItem value="super_admin">Super Admin</SelectItem>}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -145,6 +158,24 @@ export function EmployeeForm({ open, onClose, employee }: EmployeeFormProps) {
                 </FormItem>
               )}
             />
+            {!isEdit && (
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Password{' '}
+                      <span className="text-xs text-muted-foreground">(leave blank for default)</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Min 8 characters" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
               <Button type="submit" disabled={isPending}>

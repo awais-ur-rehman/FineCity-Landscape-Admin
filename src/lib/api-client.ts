@@ -14,6 +14,11 @@ apiClient.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
+  // Let browser set Content-Type automatically for FormData (needs multipart boundary)
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
+  }
+
   // Get current branch from zustand storage
   try {
     const branchStorage = localStorage.getItem('fc_branch_storage');
@@ -58,10 +63,11 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Don't retry refresh-token or login requests
+    // Don't retry auth endpoints — they have no token to refresh
     if (
       originalRequest.url?.includes('/auth/refresh-token') ||
-      originalRequest.url?.includes('/auth/verify-otp')
+      originalRequest.url?.includes('/auth/verify-otp') ||
+      originalRequest.url?.includes('/auth/login')
     ) {
       return Promise.reject(error);
     }

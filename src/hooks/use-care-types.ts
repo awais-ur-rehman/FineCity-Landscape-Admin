@@ -1,26 +1,19 @@
-import { useQuery } from '@tanstack/react-query';
+import { CARE_TYPES } from '@/lib/constants';
+import { capitalize } from '@/lib/utils';
 
 export interface CareType {
-  _id: string;
-  name: string;
-  description?: string;
+  _id: string;   // equals the care type string, e.g. 'watering'
+  name: string;  // display name, e.g. 'Watering'
   isActive: boolean;
 }
 
+/** Returns static care types derived from the CARE_TYPES constant. */
 export function useCareTypes() {
-  // Currently fetching from hardcoded constants as there is no API endpoint for care types yet
-  // This is a placeholder for future implementation
-  return useQuery({
-    queryKey: ['care-types'],
-    queryFn: async () => {
-      // Mock API call
-      return [
-        { _id: '1', name: 'Watering', description: 'Regular watering schedule', isActive: true },
-        { _id: '2', name: 'Fertilizer', description: 'Nutrient application', isActive: true },
-        { _id: '3', name: 'Pruning', description: 'Trimming and shaping', isActive: true },
-        { _id: '4', name: 'Repotting', description: 'Moving to larger pots', isActive: true },
-        { _id: '5', name: 'General', description: 'General maintenance', isActive: true },
-      ] as CareType[];
-    },
-  });
+  const data: CareType[] = CARE_TYPES.map((ct) => ({
+    _id: ct,
+    name: capitalize(ct.replace('_', ' ')),
+    isActive: true,
+  }));
+
+  return { data, isLoading: false, error: null };
 }

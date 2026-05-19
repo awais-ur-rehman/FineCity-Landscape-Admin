@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useSearch } from '@tanstack/react-router';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { useCareTasks, useTaskStats, useCompleteTask, useSkipTask } from '@/hooks/use-care-tasks';
 import { usePlantBatches } from '@/hooks/use-plant-batches';
@@ -8,6 +9,7 @@ import { TASK_STATUSES } from '@/lib/constants';
 import { capitalize, careTypeColor, statusColor, formatDate } from '@/lib/utils';
 import { TaskStatsBar } from '@/components/tasks/task-stats-bar';
 import { SkipDialog } from '@/components/tasks/skip-dialog';
+import { TaskDetailDialog } from '@/components/tasks/task-detail-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -26,19 +28,22 @@ import { MoreHorizontal, CheckCircle2, SkipForward } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useBranch } from '@/hooks/use-branch';
+import type { CareTask } from '@/lib/types';
 
 export function CareTasksPage() {
   const { currentBranch } = useBranch();
+  const searchParams = useSearch({ strict: false }) as { status?: string };
   const today = useMemo(() => new Date(), []);
   const [dateFrom, setDateFrom] = useState(format(today, 'yyyy-MM-dd'));
   const [dateTo, setDateTo] = useState(format(today, 'yyyy-MM-dd'));
-  const [status, setStatus] = useState<string>('');
+  const [status, setStatus] = useState<string>(searchParams?.status ?? '');
   const [careType, setCareType] = useState<string>('');
   const [batchId, setBatchId] = useState<string>('');
   const [assignedTo, setAssignedTo] = useState<string>('');
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [skipTaskId, setSkipTaskId] = useState<string | null>(null);
+  const [viewTask, setViewTask] = useState<CareTask | null>(null);
 
   const statsParams = {
     from: format(startOfDay(new Date(dateFrom)), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
@@ -214,7 +219,12 @@ export function CareTasksPage() {
                         <Checkbox checked={selected.has(task._id)} onCheckedChange={() => toggleSelect(task._id)} />
                       )}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-sm">{formatDate(task.scheduledAt)}</TableCell>
+                    <TableCell
+                      className="whitespace-nowrap text-sm cursor-pointer hover:underline"
+                      onClick={() => setViewTask(task)}
+                    >
+                      {formatDate(task.scheduledAt)}
+                    </TableCell>
                     <TableCell className="font-medium">{task.batchId.name}</TableCell>
                     <TableCell>
                       <Badge className={careTypeColor(task.careType)}>{getCareTypeName(task.careType)}</Badge>
@@ -272,6 +282,11 @@ export function CareTasksPage() {
         onClose={() => setSkipTaskId(null)}
         onConfirm={handleSkipConfirm}
         isPending={skip.isPending}
+      />
+
+      <TaskDetailDialog
+        task={viewTask}
+        onClose={() => setViewTask(null)}
       />
     </div>
   );

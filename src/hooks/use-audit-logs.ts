@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
+import apiClient from '@/lib/api-client';
+import type { ApiResponse, Pagination } from '@/lib/types';
 
 export interface AuditLog {
   _id: string;
   action: string;
-  entityType: string;
+  entity: string;
   entityId: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   performedBy: {
     _id: string;
     name: string;
@@ -18,51 +20,40 @@ export interface AuditLog {
   createdAt: string;
 }
 
-export function useAuditLogs(params?: {
+interface AuditLogListResponse {
+  logs: AuditLog[];
+  pagination: Pagination;
+}
+
+interface UseAuditLogsParams {
   page?: number;
   limit?: number;
-  entityType?: string;
+  entity?: string;
   action?: string;
   branchId?: string;
   startDate?: string;
   endDate?: string;
-}) {
+  search?: string;
+}
+
+export function useAuditLogs(params?: UseAuditLogsParams) {
   return useQuery({
     queryKey: ['audit-logs', params],
     queryFn: async () => {
-      // Mocking API for now as likely endpoint doesn't exist yet
-      // const { data } = await apiClient.get<ApiResponse<AuditLogResponse>>('/audit-logs', { params });
-      // return data.data;
-
-      // Mock data
-      return {
-        logs: [
-          {
-            _id: '1',
-            action: 'create',
-            entityType: 'plant_batch',
-            entityId: 'pb-123',
-            details: { name: 'New Batch' },
-            performedBy: { _id: 'u1', name: 'Admin User', email: 'admin@finecity.ae' },
-            createdAt: new Date().toISOString(),
-          },
-          {
-            _id: '2',
-            action: 'update',
-            entityType: 'care_task',
-            entityId: 'ct-456',
-            details: { status: 'completed' },
-            performedBy: { _id: 'u2', name: 'John Doe', email: 'john@finecity.ae' },
-            createdAt: new Date(Date.now() - 3600000).toISOString(),
-          }
-        ] as AuditLog[],
-        pagination: {
-          page: 1,
-          limit: 20,
-          total: 2,
-          pages: 1
-        }
-      };
+      const { data } = await apiClient.get<ApiResponse<AuditLogListResponse>>('/audit-logs', {
+        params: {
+          page: params?.page ?? 1,
+          limit: params?.limit ?? 20,
+          ...(params?.entity && { entity: params.entity }),
+          ...(params?.action && { action: params.action }),
+          ...(params?.branchId && { branchId: params.branchId }),
+          ...(params?.startDate && { startDate: params.startDate }),
+          ...(params?.endDate && { endDate: params.endDate }),
+          ...(params?.search && { search: params.search }),
+        },
+      });
+      return data.data;
     },
+    staleTime: 30_000,
   });
 }

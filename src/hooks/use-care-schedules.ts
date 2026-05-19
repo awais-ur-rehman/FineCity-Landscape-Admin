@@ -22,6 +22,7 @@ export interface SchedulePayload {
   frequencyDays: number;
   scheduledTime: string;
   assignedTo: string[];
+  recommendedFertilizers?: string[];
   instructions?: string;
   startDate: string;
   isActive: boolean;

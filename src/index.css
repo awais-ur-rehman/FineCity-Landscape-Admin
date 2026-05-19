@@ -54,9 +54,10 @@
 
     /* Care type colors */
     --color-care-watering: #3B82F6;
-    --color-care-fertilizer: #F59E0B;
+    --color-care-fertilizing: #F59E0B;
     --color-care-pruning: #8B5CF6;
     --color-care-repotting: #14B8A6;
+    --color-care-pest-control: #EF4444;
     --color-care-general: #546E7A;
 
     /* Task status colors */

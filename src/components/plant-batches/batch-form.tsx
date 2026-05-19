@@ -1,8 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v4';
 import { useCreateBatch, useUpdateBatch } from '@/hooks/use-plant-batches';
+import { usePlantTypes } from '@/hooks/use-plant-types';
+import { useBranch } from '@/hooks/use-branch';
 import {
   Dialog,
   DialogContent,
@@ -26,8 +28,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
+import apiClient from '@/lib/api-client';
 import type { PlantBatch } from '@/lib/types';
 import type { Zone } from '@/hooks/use-zones';
 import type { Category } from '@/hooks/use-categories';
@@ -58,6 +61,10 @@ export function BatchForm({ open, onClose, batch, zones, categories }: BatchForm
   const isEdit = !!batch;
   const createBatch = useCreateBatch();
   const updateBatch = useUpdateBatch();
+  const { data: plantTypes } = usePlantTypes();
+  const { currentBranch } = useBranch();
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imagePublicId, setImagePublicId] = useState<string | null>(null);
 
   const emptyDefaults: BatchFormValues = {
     name: '', plantType: '', scientificName: '', category: '',
@@ -72,10 +79,15 @@ export function BatchForm({ open, onClose, batch, zones, categories }: BatchForm
   useEffect(() => {
     if (batch) {
       form.reset({
-        name: batch.name, plantType: batch.plantType,
-        scientificName: batch.scientificName ?? '', category: batch.category,
-        quantity: batch.quantity, zone: batch.zone, location: batch.location,
-        imageUrl: batch.imageUrl ?? '', notes: batch.notes ?? '',
+        name: batch.name,
+        plantType: typeof batch.plantType === 'object' ? batch.plantType._id : batch.plantType,
+        scientificName: batch.scientificName ?? '',
+        category: typeof batch.category === 'object' ? batch.category._id : batch.category,
+        quantity: batch.quantity,
+        zone: typeof batch.zone === 'object' ? batch.zone._id : batch.zone,
+        location: batch.location,
+        imageUrl: batch.imageUrl ?? '',
+        notes: batch.notes ?? '',
       });
     } else {
       form.reset(emptyDefaults);
@@ -96,7 +108,7 @@ export function BatchForm({ open, onClose, batch, zones, categories }: BatchForm
         await updateBatch.mutateAsync({ id: batch._id, payload });
         toast.success('Batch updated');
       } else {
-        await createBatch.mutateAsync(payload);
+        await createBatch.mutateAsync({ ...payload, branchId: currentBranch?._id });
         toast.success('Batch created');
       }
       onClose();
@@ -106,6 +118,37 @@ export function BatchForm({ open, onClose, batch, zones, categories }: BatchForm
   };
 
   const isPending = createBatch.isPending || updateBatch.isPending;
+
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const { data } = await apiClient.post('/plant-batches/upload-image', formData);
+      form.setValue('imageUrl', data.data.url);
+      setImagePublicId(data.data.publicId);
+    } catch {
+      toast.error('Failed to upload image');
+    } finally {
+      setImageUploading(false);
+      // Reset file input so the same file can be re-selected after removal
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    if (imagePublicId) {
+      try {
+        await apiClient.delete('/plant-batches/delete-image', { data: { publicId: imagePublicId } });
+      } catch {
+        // Non-critical — clear locally anyway
+      }
+      setImagePublicId(null);
+    }
+    form.setValue('imageUrl', '');
+  };
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -137,9 +180,20 @@ export function BatchForm({ open, onClose, batch, zones, categories }: BatchForm
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Plant Type</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Areca Palm" {...field} />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select plant type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {plantTypes?.map((pt) => (
+                          <SelectItem key={pt._id} value={pt._id}>
+                            {pt.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -245,19 +299,44 @@ export function BatchForm({ open, onClose, batch, zones, categories }: BatchForm
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="imageUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Image URL</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+            {/* Image Upload */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Batch Image</label>
+              {form.watch('imageUrl') ? (
+                <div className="relative inline-block">
+                  <img
+                    src={form.watch('imageUrl')}
+                    alt="Batch"
+                    className="h-32 w-32 rounded-lg object-cover border"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-white flex items-center justify-center"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex h-32 w-32 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 transition-colors">
+                  {imageUploading ? (
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  ) : (
+                    <div className="flex flex-col items-center gap-1">
+                      <Upload className="h-6 w-6 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Upload</span>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageSelect}
+                    disabled={imageUploading}
+                  />
+                </label>
               )}
-            />
+            </div>
 
             <FormField
               control={form.control}

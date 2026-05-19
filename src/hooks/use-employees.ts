@@ -18,6 +18,8 @@ export interface EmployeePayload {
   name: string;
   email: string;
   phone?: string;
+  role?: string;
+  branches?: string[];
 }
 
 const EMPLOYEE_KEYS = {

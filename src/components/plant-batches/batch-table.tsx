@@ -92,12 +92,18 @@ export function BatchTable({
                   onClick={() => navigate({ to: '/plant-batches/$id', params: { id: batch._id } })}
                 >
                   <TableCell className="font-medium">{batch.name}</TableCell>
-                  <TableCell>{batch.plantType}</TableCell>
-                  <TableCell>{getZoneName(batch.zone)}</TableCell>
+                  <TableCell>
+                    {typeof batch.plantType === 'string' ? batch.plantType : batch.plantType.name}
+                  </TableCell>
+                  <TableCell>
+                    {typeof batch.zone === 'string' ? getZoneName(batch.zone) : batch.zone.name}
+                  </TableCell>
                   <TableCell>{batch.location}</TableCell>
                   <TableCell className="text-right">{batch.quantity}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{getCategoryName(batch.category)}</Badge>
+                    <Badge variant="secondary">
+                      {typeof batch.category === 'string' ? getCategoryName(batch.category) : batch.category.name}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <Badge variant={batch.status === 'active' ? 'default' : 'outline'}>
