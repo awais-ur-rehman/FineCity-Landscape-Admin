@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useZones, useCreateZone, useUpdateZone, useDeleteZone } from '@/hooks/use-zones';
 import type { Zone } from '@/hooks/use-zones';
+import { useBranch } from '@/hooks/use-branch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -33,7 +34,8 @@ export function ZonesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editZone, setEditZone] = useState<Zone | null>(null);
 
-  const { data: zones, isLoading } = useZones();
+  const { currentBranch } = useBranch();
+  const { data: zones, isLoading } = useZones({ branchId: currentBranch?._id });
   const createZone = useCreateZone();
   const updateZone = useUpdateZone();
   const deleteZone = useDeleteZone();
@@ -76,7 +78,11 @@ export function ZonesPage() {
         await updateZone.mutateAsync({ id: editZone._id, data: values });
         toast.success('Zone updated');
       } else {
-        await createZone.mutateAsync(values);
+        if (!currentBranch) {
+          toast.error('Select a branch before creating a zone');
+          return;
+        }
+        await createZone.mutateAsync({ ...values, branchId: currentBranch._id } as Parameters<typeof createZone.mutateAsync>[0]);
         toast.success('Zone created');
       }
       setFormOpen(false);

@@ -7,6 +7,7 @@ import { useCreateSchedule, useUpdateSchedule } from '@/hooks/use-care-schedules
 import { usePlantBatches } from '@/hooks/use-plant-batches';
 import { useEmployees } from '@/hooks/use-employees';
 import { useFertilizers } from '@/hooks/use-fertilizers';
+import { useBranch } from '@/hooks/use-branch';
 import { CARE_TYPES } from '@/lib/constants';
 import { capitalize, careTypeColor } from '@/lib/utils';
 import {
@@ -50,9 +51,11 @@ export function ScheduleForm({ open, onClose, schedule }: ScheduleFormProps) {
   const isEdit = !!schedule;
   const create = useCreateSchedule();
   const update = useUpdateSchedule();
-  const batches = usePlantBatches({ status: 'active', limit: 100 });
-  const employees = useEmployees({ limit: 100 });
-  const { data: fertilizers } = useFertilizers({ isActive: true });
+  const { currentBranch } = useBranch();
+  const branchId = currentBranch?._id;
+  const batches = usePlantBatches({ status: 'active', limit: 100, ...(branchId && { branchId }) });
+  const employees = useEmployees({ limit: 100, role: 'employee', ...(branchId && { branchId }) });
+  const { data: fertilizers } = useFertilizers({ isActive: true, ...(branchId && { branchId }) });
 
   const defaults: FormValues = {
     batchId: '', careType: 'watering', frequencyDays: 3, scheduledTime: '08:00',
