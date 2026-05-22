@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useBranch } from '@/hooks/use-branch';
 import { useBranches } from '@/hooks/use-branches';
 import { useAuth } from '@/hooks/use-auth';
+import { Link } from '@tanstack/react-router';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Building2, ChevronDown, Check, Loader2 } from 'lucide-react';
+import { Building2, ChevronDown, Check, Loader2, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 
@@ -37,6 +38,40 @@ export function BranchSelector({ collapsed }: BranchSelectorProps) {
   );
 
   const selectedBranchName = currentBranch?.name ?? 'Select Branch';
+
+  // Super admin with no branches — show create prompt
+  const noBranches = !isLoading && user?.role === 'super_admin' && (!branches || branches.length === 0);
+  if (noBranches) {
+    if (collapsed) {
+      return (
+        <div className="flex justify-center py-2">
+          <Link to="/branches">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full bg-amber-500/10 text-amber-600 hover:bg-amber-500/20"
+              title="Create your first branch"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+      );
+    }
+    return (
+      <div className="px-3 py-2">
+        <Link to="/branches">
+          <Button
+            variant="outline"
+            className="w-full justify-start gap-2 border-amber-500/30 bg-amber-500/10 px-3 text-amber-700 hover:bg-amber-500/20"
+          >
+            <Plus className="h-4 w-4 shrink-0" />
+            <span className="truncate text-sm font-medium">Create first branch</span>
+          </Button>
+        </Link>
+      </div>
+    );
+  }
 
   if (collapsed) {
     return (

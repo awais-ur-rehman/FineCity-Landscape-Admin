@@ -37,7 +37,7 @@ function getStoredUser(): AuthUser | null {
   }
 }
 
-function requireRole(...roles: Array<'super_admin' | 'admin' | 'employee'>) {
+function requireRole(...roles: Array<'super_admin' | 'branch_manager' | 'employee'>) {
   const user = getStoredUser();
   if (!user || !roles.includes(user.role)) {
     throw redirect({ to: '/' });
@@ -158,7 +158,7 @@ const auditLogsRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/audit-logs',
   component: AuditLogsPage,
-  beforeLoad: () => requireRole(ROLES.SUPER_ADMIN, ROLES.ADMIN),
+  beforeLoad: () => requireRole(ROLES.SUPER_ADMIN, ROLES.BRANCH_MANAGER),
 });
 
 /** Reports — admin + super_admin only */
@@ -166,7 +166,7 @@ const reportsRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/reports',
   component: ReportsPage,
-  beforeLoad: () => requireRole(ROLES.SUPER_ADMIN, ROLES.ADMIN),
+  beforeLoad: () => requireRole(ROLES.SUPER_ADMIN, ROLES.BRANCH_MANAGER),
 });
 
 /** Catch-all: unknown paths redirect to / (auth guard on authenticatedRoute handles the rest) */

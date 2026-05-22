@@ -26,7 +26,7 @@ import { toast } from 'sonner';
 import { formatDateShort } from '@/lib/utils';
 import { format, subDays } from 'date-fns';
 import type { User } from '@/lib/types';
-import { EmployeeForm } from '@/components/employees/employee-form';
+import { EmployeeForm, roleLabel } from '@/components/employees/employee-form';
 
 import { useBranch } from '@/hooks/use-branch';
 
@@ -114,7 +114,7 @@ export function EmployeesPage() {
           <SelectContent>
             <SelectItem value="all">All Roles</SelectItem>
             <SelectItem value="employee">Employee</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="branch_manager">Branch Manager</SelectItem>
             <SelectItem value="super_admin">Super Admin</SelectItem>
           </SelectContent>
         </Select>
@@ -152,7 +152,7 @@ export function EmployeesPage() {
                     <TableCell className="font-medium">{emp.name}</TableCell>
                     <TableCell>{emp.email}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{emp.role}</Badge>
+                      <Badge variant="secondary">{roleLabel(emp.role)}</Badge>
                     </TableCell>
                     <TableCell>{emp.phone || '—'}</TableCell>
                     <TableCell>

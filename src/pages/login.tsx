@@ -31,7 +31,7 @@ export function LoginPage() {
     try {
       const response = await login.mutateAsync(data);
       // Role check — must be admin or super_admin
-      if (response.data.user.role !== ROLES.ADMIN && response.data.user.role !== ROLES.SUPER_ADMIN) {
+      if (response.data.user.role !== ROLES.BRANCH_MANAGER && response.data.user.role !== ROLES.SUPER_ADMIN) {
         localStorage.removeItem(TOKEN_KEYS.ACCESS);
         localStorage.removeItem(TOKEN_KEYS.REFRESH);
         localStorage.removeItem(TOKEN_KEYS.USER);

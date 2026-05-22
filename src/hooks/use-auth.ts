@@ -9,7 +9,7 @@ export interface AuthUser {
   _id: string;
   email: string;
   name: string;
-  role: 'super_admin' | 'admin' | 'employee';
+  role: 'super_admin' | 'branch_manager' | 'employee';
   phone?: string;
   branches: Array<{ _id: string; name: string; code: string }>;
   currentBranch?: { _id: string; name: string; code: string };

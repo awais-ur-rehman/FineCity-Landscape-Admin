@@ -25,7 +25,7 @@ export interface UserRef {
 /** Full user */
 export interface User extends UserRef {
   phone?: string;
-  role: 'super_admin' | 'admin' | 'employee';
+  role: 'super_admin' | 'branch_manager' | 'employee';
   isActive: boolean;
   branches: Array<{ _id: string; name: string; code: string }>;
   currentBranch?: { _id: string; name: string; code: string };

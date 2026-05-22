@@ -52,7 +52,7 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const isAdmin = user?.role === 'branch_manager' || user?.role === 'super_admin';
   const isSuperAdmin = user?.role === 'super_admin';
 
   return (

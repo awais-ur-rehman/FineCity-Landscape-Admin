@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v4';
-import { useCreateEmployee, useUpdateEmployee } from '@/hooks/use-employees';
-import { useBranch } from '@/hooks/use-branch';
+import { useCreateEmployee, useUpdateEmployee, type EmployeePayload } from '@/hooks/use-employees';
+import { useBranches } from '@/hooks/use-branches';
 import { useAuth } from '@/hooks/use-auth';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { User } from '@/lib/types';
@@ -24,7 +25,7 @@ const employeeSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.email('Please enter a valid email'),
   phone: z.string().optional(),
-  role: z.enum(['admin', 'employee', 'super_admin']).default('employee'),
+  role: z.enum(['branch_manager', 'employee', 'super_admin']).default('employee'),
   password: z.string().min(8, 'Password must be at least 8 characters').optional(),
 });
 
@@ -36,15 +37,25 @@ interface EmployeeFormProps {
   employee: User | null;
 }
 
+/** Display label for a role value */
+function roleLabel(role: string) {
+  if (role === 'super_admin') return 'Super Admin';
+  if (role === 'branch_manager') return 'Branch Manager';
+  return 'Employee';
+}
+
 export function EmployeeForm({ open, onClose, employee }: EmployeeFormProps) {
   const isEdit = !!employee;
   const create = useCreateEmployee();
   const update = useUpdateEmployee();
-  const { currentBranch } = useBranch();
   const { user: currentUser } = useAuth();
   const isSuperAdmin = currentUser?.role === 'super_admin';
 
-  const [role, setRole] = useState<'admin' | 'employee' | 'super_admin'>('employee');
+  const [role, setRole] = useState<'branch_manager' | 'employee' | 'super_admin'>('employee');
+  const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
+
+  // Only fetch branches when super_admin (they need to pick branches for the new user)
+  const { data: branches = [] } = useBranches();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(employeeSchema),
@@ -57,23 +68,32 @@ export function EmployeeForm({ open, onClose, employee }: EmployeeFormProps) {
         name: employee.name,
         email: employee.email,
         phone: employee.phone ?? '',
-        role: employee.role || 'employee',
+        role: (employee.role as FormValues['role']) || 'employee',
         password: '',
       });
-      setRole(employee.role || 'employee');
+      setRole((employee.role as FormValues['role']) || 'employee');
+      setSelectedBranches(employee.branches?.map((b) => b._id) ?? []);
     } else {
       form.reset({ name: '', email: '', phone: '', role: 'employee', password: '' });
       setRole('employee');
+      setSelectedBranches([]);
     }
   }, [employee, form]);
 
+  const toggleBranch = (branchId: string) => {
+    setSelectedBranches((prev) =>
+      prev.includes(branchId) ? prev.filter((b) => b !== branchId) : [...prev, branchId],
+    );
+  };
+
   const onSubmit = async (values: FormValues) => {
     try {
-      const payload = {
-        ...values,
+      const payload: EmployeePayload = {
+        name: values.name,
+        email: values.email,
         phone: values.phone || undefined,
         role,
-        branches: currentBranch ? [currentBranch._id] : undefined,
+        branches: isSuperAdmin ? selectedBranches : undefined,
         ...(!isEdit && { password: values.password || 'Finecity@123' }),
       };
       if (isEdit) {
@@ -97,7 +117,7 @@ export function EmployeeForm({ open, onClose, employee }: EmployeeFormProps) {
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Edit Employee' : 'Add Employee'}</DialogTitle>
+          <DialogTitle>{isEdit ? 'Edit User' : 'Add User'}</DialogTitle>
         </DialogHeader>
         <Form key={isEdit ? 'edit' : 'create'} {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -112,28 +132,34 @@ export function EmployeeForm({ open, onClose, employee }: EmployeeFormProps) {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role</FormLabel>
-                  <Select onValueChange={(v) => { field.onChange(v); setRole(v as any); }} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="employee">Employee</SelectItem>
-                      {isSuperAdmin && <SelectItem value="admin">Admin</SelectItem>}
-                      {isSuperAdmin && <SelectItem value="super_admin">Super Admin</SelectItem>}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
+            {isSuperAdmin && (
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <Select
+                      onValueChange={(v) => { field.onChange(v); setRole(v as FormValues['role']); }}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="employee">Employee</SelectItem>
+                        <SelectItem value="branch_manager">Branch Manager</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="email"
@@ -141,12 +167,13 @@ export function EmployeeForm({ open, onClose, employee }: EmployeeFormProps) {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="employee@finecity.ae" type="email" {...field} disabled={isEdit} />
+                    <Input placeholder="user@finecity.ae" type="email" {...field} disabled={isEdit} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="phone"
@@ -158,6 +185,7 @@ export function EmployeeForm({ open, onClose, employee }: EmployeeFormProps) {
                 </FormItem>
               )}
             />
+
             {!isEdit && (
               <FormField
                 control={form.control}
@@ -176,6 +204,32 @@ export function EmployeeForm({ open, onClose, employee }: EmployeeFormProps) {
                 )}
               />
             )}
+
+            {/* Branch assignment — super_admin picks branches for the new user */}
+            {isSuperAdmin && branches.length > 0 && (
+              <div className="space-y-2">
+                <FormLabel>Assign Branches</FormLabel>
+                <div className="rounded-md border p-3 space-y-2 max-h-40 overflow-y-auto">
+                  {branches.map((branch) => (
+                    <label
+                      key={branch._id}
+                      className="flex items-center gap-2 cursor-pointer text-sm"
+                    >
+                      <Checkbox
+                        checked={selectedBranches.includes(branch._id)}
+                        onCheckedChange={() => toggleBranch(branch._id)}
+                      />
+                      <span>{branch.name}</span>
+                      <span className="text-xs text-muted-foreground">({branch.code})</span>
+                    </label>
+                  ))}
+                </div>
+                {selectedBranches.length === 0 && (
+                  <p className="text-xs text-muted-foreground">No branch assigned — user won't see any data.</p>
+                )}
+              </div>
+            )}
+
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
               <Button type="submit" disabled={isPending}>
@@ -189,3 +243,5 @@ export function EmployeeForm({ open, onClose, employee }: EmployeeFormProps) {
     </Dialog>
   );
 }
+
+export { roleLabel };
