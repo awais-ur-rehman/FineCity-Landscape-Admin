@@ -21,10 +21,17 @@ export function useZones(params?: { branchId?: string }) {
   });
 }
 
+export interface ZoneCreatePayload {
+  name: string;
+  code: string;
+  description?: string;
+  branchId: string;
+}
+
 export function useCreateZone() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: Partial<Zone>) => {
+    mutationFn: async (data: ZoneCreatePayload) => {
       const { data: res } = await apiClient.post<ApiResponse<Zone>>('/zones', data);
       return res.data;
     },

@@ -25,7 +25,7 @@ const employeeSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.email('Please enter a valid email'),
   phone: z.string().optional(),
-  role: z.enum(['branch_manager', 'employee', 'super_admin']).default('employee'),
+  role: z.enum(['branch_manager', 'employee', 'super_admin']),
   password: z.string().min(8, 'Password must be at least 8 characters').optional(),
 });
 

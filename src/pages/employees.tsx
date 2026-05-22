@@ -108,8 +108,8 @@ export function EmployeesPage() {
             setPage(1);
           }}
         >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Role" />
+          <SelectTrigger className="min-w-[150px]">
+            <SelectValue placeholder="All Roles" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Roles</SelectItem>

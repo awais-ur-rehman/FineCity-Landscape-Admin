@@ -123,8 +123,8 @@ export function PlantBatchesPage() {
             setPage(1);
           }}
         >
-          <SelectTrigger className="w-32">
-            <SelectValue placeholder="Zone" />
+          <SelectTrigger className="min-w-[130px]">
+            <SelectValue placeholder="All Zones" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Zones</SelectItem>
@@ -143,8 +143,8 @@ export function PlantBatchesPage() {
             setPage(1);
           }}
         >
-          <SelectTrigger className="w-36">
-            <SelectValue placeholder="Category" />
+          <SelectTrigger className="min-w-[150px]">
+            <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
@@ -163,8 +163,8 @@ export function PlantBatchesPage() {
             setPage(1);
           }}
         >
-          <SelectTrigger className="w-32">
-            <SelectValue placeholder="Status" />
+          <SelectTrigger className="min-w-[120px]">
+            <SelectValue placeholder="All Status" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>

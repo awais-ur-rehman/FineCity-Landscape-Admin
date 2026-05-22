@@ -1,5 +1,6 @@
 import { useCareTypes } from '@/hooks/use-care-types';
 import { Badge } from '@/components/ui/badge';
+import type { CareType } from '@/lib/constants';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -32,7 +33,7 @@ export function CareTypesPage() {
             {careTypes?.map((type) => (
               <TableRow key={type._id}>
                 <TableCell>
-                  <Badge className={careTypeColor(type._id)}>
+                  <Badge className={careTypeColor(type._id as CareType)}>
                     {type._id}
                   </Badge>
                 </TableCell>

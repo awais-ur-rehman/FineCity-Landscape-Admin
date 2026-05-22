@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
-import { TOKEN_KEYS, ROLES } from '@/lib/constants';
+import { TOKEN_KEYS } from '@/lib/constants';
 import type { ApiResponse } from '@/lib/types';
 
 export interface AuthUser {

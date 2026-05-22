@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useZones, useCreateZone, useUpdateZone, useDeleteZone } from '@/hooks/use-zones';
-import type { Zone } from '@/hooks/use-zones';
+import type { Zone, ZoneCreatePayload } from '@/hooks/use-zones';
 import { useBranch } from '@/hooks/use-branch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -82,7 +82,7 @@ export function ZonesPage() {
           toast.error('Select a branch before creating a zone');
           return;
         }
-        await createZone.mutateAsync({ ...values, branchId: currentBranch._id } as Parameters<typeof createZone.mutateAsync>[0]);
+        await createZone.mutateAsync({ ...values, branchId: currentBranch._id } as ZoneCreatePayload);
         toast.success('Zone created');
       }
       setFormOpen(false);

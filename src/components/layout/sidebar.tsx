@@ -9,7 +9,6 @@ import {
   Users,
   Settings,
   ChevronLeft,
-  ChevronRight,
   FolderTree,
   MapPin,
   Droplets,
@@ -20,7 +19,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
 const navItems = [
@@ -48,6 +46,37 @@ const superAdminItems = [
   { to: '/branches', label: 'Branches', icon: Building2 },
 ];
 
+function NavLink({
+  to,
+  label,
+  icon: Icon,
+  isActive,
+  collapsed,
+}: {
+  to: string;
+  label: string;
+  icon: React.ElementType;
+  isActive: boolean;
+  collapsed: boolean;
+}) {
+  return (
+    <Link
+      to={to}
+      title={collapsed ? label : undefined}
+      className={cn(
+        'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+        isActive
+          ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+          : 'text-sidebar-foreground/60 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground',
+        collapsed && 'justify-center px-2',
+      )}
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      {!collapsed && <span>{label}</span>}
+    </Link>
+  );
+}
+
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
@@ -58,19 +87,29 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'flex h-screen flex-col bg-sidebar text-sidebar-foreground transition-all duration-300',
+        'relative flex h-screen flex-col bg-sidebar text-sidebar-foreground transition-all duration-300',
         collapsed ? 'w-16' : 'w-64',
       )}
     >
+      {/* Collapse toggle — half-inside / half-outside, parallel to logo */}
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="absolute top-8 -right-3 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card shadow-sm hover:bg-muted transition-colors"
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        <ChevronLeft
+          className={cn(
+            'h-3.5 w-3.5 text-muted-foreground transition-transform duration-300',
+            collapsed && 'rotate-180',
+          )}
+        />
+      </button>
+
       {/* Logo */}
-      <div className="flex h-16 items-center justify-center px-4">
+      <div className={cn('flex h-16 items-center px-4', collapsed ? 'justify-center' : 'gap-2')}>
+        <Leaf className="h-5 w-5 shrink-0 text-sidebar-primary" />
         {!collapsed && (
-          <span className="text-lg font-semibold tracking-tight">
-            Finecity Landscape
-          </span>
-        )}
-        {collapsed && (
-          <Leaf className="h-6 w-6 text-sidebar-primary" />
+          <span className="text-base font-semibold tracking-tight">Finecity Landscape</span>
         )}
       </div>
 
@@ -80,126 +119,91 @@ export function Sidebar() {
       <BranchSelector collapsed={collapsed} />
 
       {/* Nav */}
-      <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-2">
-        {navItems.map(({ to, label, icon: Icon }) => {
-          const isActive =
-            to === '/'
-              ? location.pathname === '/'
-              : location.pathname.startsWith(to);
+      <nav className="flex-1 overflow-y-auto px-2 py-2">
+        <div className="space-y-0.5">
+          {navItems.map(({ to, label, icon: Icon }) => {
+            const isActive =
+              to === '/'
+                ? location.pathname === '/'
+                : location.pathname.startsWith(to);
+            return (
+              <NavLink
+                key={to}
+                to={to}
+                label={label}
+                icon={Icon}
+                isActive={isActive}
+                collapsed={collapsed}
+              />
+            );
+          })}
+        </div>
 
-          return (
-            <Link
-              key={to}
-              to={to}
-              className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
-                collapsed && 'justify-center px-2',
-              )}
-            >
-              <Icon className="h-5 w-5 shrink-0" />
-              {!collapsed && <span>{label}</span>}
-            </Link>
-          );
-        })}
-
-        {!collapsed && (
-          <div className="mt-6 mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/40">
-            Master Data
+        <div className="mt-5">
+          {!collapsed && (
+            <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/35">
+              Master Data
+            </p>
+          )}
+          {collapsed && <Separator className="my-2 bg-sidebar-border/50" />}
+          <div className="space-y-0.5">
+            {masterDataItems.map(({ to, label, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                label={label}
+                icon={Icon}
+                isActive={location.pathname.startsWith(to)}
+                collapsed={collapsed}
+              />
+            ))}
           </div>
-        )}
-        
-        {masterDataItems.map(({ to, label, icon: Icon }) => (
-          <Link
-            key={to}
-            to={to}
-            className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-              location.pathname.startsWith(to)
-                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
-              collapsed && 'justify-center px-2',
-            )}
-          >
-            <Icon className="h-5 w-5 shrink-0" />
-            {!collapsed && <span>{label}</span>}
-          </Link>
-        ))}
+        </div>
 
         {isAdmin && (
-          <>
+          <div className="mt-5">
             {!collapsed && (
-              <div className="mt-6 mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/40">
+              <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/35">
                 Administration
-              </div>
+              </p>
             )}
-            {adminItems.map(({ to, label, icon: Icon }) => (
-              <Link
-                key={to}
-                to={to}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                  location.pathname.startsWith(to)
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
-                  collapsed && 'justify-center px-2',
-                )}
-              >
-                <Icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span>{label}</span>}
-              </Link>
-            ))}
-            {isSuperAdmin && superAdminItems.map(({ to, label, icon: Icon }) => (
-              <Link
-                key={to}
-                to={to}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                  location.pathname.startsWith(to)
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
-                  collapsed && 'justify-center px-2',
-                )}
-              >
-                <Icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span>{label}</span>}
-              </Link>
-            ))}
-          </>
+            {collapsed && <Separator className="my-2 bg-sidebar-border/50" />}
+            <div className="space-y-0.5">
+              {adminItems.map(({ to, label, icon: Icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  label={label}
+                  icon={Icon}
+                  isActive={location.pathname.startsWith(to)}
+                  collapsed={collapsed}
+                />
+              ))}
+              {isSuperAdmin &&
+                superAdminItems.map(({ to, label, icon: Icon }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    label={label}
+                    icon={Icon}
+                    isActive={location.pathname.startsWith(to)}
+                    collapsed={collapsed}
+                  />
+                ))}
+            </div>
+          </div>
         )}
       </nav>
 
-      {/* Settings (Pinned Bottom) */}
-      <div className="p-2 border-t border-sidebar-border">
-        <Link
+      {/* Settings — pinned bottom */}
+      <div className="border-t border-sidebar-border p-2">
+        <NavLink
           to="/settings"
-          className={cn(
-            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-            location.pathname.startsWith('/settings')
-              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
-            collapsed && 'justify-center px-2',
-          )}
-        >
-          <Settings className="h-5 w-5 shrink-0" />
-          {!collapsed && <span>Settings</span>}
-        </Link>
-        
-        {/* Collapse toggle */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setCollapsed(!collapsed)}
-          className="mt-2 w-full text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-        >
-          {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
-          )}
-        </Button>
+          label="Settings"
+          icon={Settings}
+          isActive={location.pathname.startsWith('/settings')}
+          collapsed={collapsed}
+        />
       </div>
     </aside>
   );

@@ -48,13 +48,13 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="items-center text-center">
-          <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-primary">
-            <Leaf className="h-7 w-7 text-primary-foreground" />
+      <Card className="w-full max-w-sm shadow-lg">
+        <CardHeader className="items-center pb-4 text-center">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary shadow-sm">
+            <Leaf className="h-6 w-6 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl font-semibold">Finecity Landscape</CardTitle>
-          <CardDescription>Sign in to the admin portal</CardDescription>
+          <CardTitle className="text-xl font-semibold">Finecity Landscape</CardTitle>
+          <CardDescription className="text-sm">Admin Portal — Sign in to continue</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -64,7 +64,7 @@ export function LoginPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Email address</FormLabel>
                     <FormControl>
                       <Input placeholder="admin@finecity.ae" type="email" autoComplete="email" {...field} />
                     </FormControl>
@@ -85,7 +85,7 @@ export function LoginPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={login.isPending}>
+              <Button type="submit" className="mt-2 w-full" disabled={login.isPending}>
                 {login.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sign In
               </Button>

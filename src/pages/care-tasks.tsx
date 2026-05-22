@@ -136,28 +136,28 @@ export function CareTasksPage() {
           <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} className="w-40" />
         </div>
         <Select value={status} onValueChange={(v) => { setStatus(v === 'all' ? '' : v); setPage(1); }}>
-          <SelectTrigger className="w-32"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="min-w-[130px]"><SelectValue placeholder="All Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             {TASK_STATUSES.map((s) => <SelectItem key={s} value={s}>{capitalize(s)}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={careType} onValueChange={(v) => { setCareType(v === 'all' ? '' : v); setPage(1); }}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="Care Type" /></SelectTrigger>
+          <SelectTrigger className="min-w-[140px]"><SelectValue placeholder="All Care Types" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
             {careTypes?.map((c) => <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={batchId} onValueChange={(v) => { setBatchId(v === 'all' ? '' : v); setPage(1); }}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="Batch" /></SelectTrigger>
+          <SelectTrigger className="min-w-[160px]"><SelectValue placeholder="All Batches" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Batches</SelectItem>
             {batches.data?.batches.map((b) => <SelectItem key={b._id} value={b._id}>{b.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={assignedTo} onValueChange={(v) => { setAssignedTo(v === 'all' ? '' : v); setPage(1); }}>
-          <SelectTrigger className="w-40"><SelectValue placeholder="Employee" /></SelectTrigger>
+          <SelectTrigger className="min-w-[150px]"><SelectValue placeholder="All Employees" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Employees</SelectItem>
             {employees.data?.users.map((u) => <SelectItem key={u._id} value={u._id}>{u.name}</SelectItem>)}

@@ -63,6 +63,7 @@ export interface PlantBatchPayload {
   location: string;
   imageUrl?: string;
   notes?: string;
+  branchId?: string;
 }
 
 /** Care schedule create/update payload */

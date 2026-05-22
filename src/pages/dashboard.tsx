@@ -26,14 +26,14 @@ export function DashboardPage() {
   const branchId = currentBranch?._id;
 
   const todayStats = useTaskStats({
-    from: format(startOfDay(today), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
-    to: format(endOfDay(today), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
+    from: startOfDay(today).toISOString(),
+    to: endOfDay(today).toISOString(),
     ...(branchId && { branchId }),
   });
 
   const weekStats = useTaskStats({
-    from: format(startOfDay(subDays(today, 6)), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
-    to: format(endOfDay(today), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
+    from: startOfDay(subDays(today, 6)).toISOString(),
+    to: endOfDay(today).toISOString(),
     ...(branchId && { branchId }),
   });
 

@@ -108,7 +108,11 @@ export function BatchForm({ open, onClose, batch, zones, categories }: BatchForm
         await updateBatch.mutateAsync({ id: batch._id, payload });
         toast.success('Batch updated');
       } else {
-        await createBatch.mutateAsync({ ...payload, branchId: currentBranch?._id });
+        if (!currentBranch?._id) {
+          toast.error('Select a branch before creating a batch');
+          return;
+        }
+        await createBatch.mutateAsync({ ...payload, branchId: currentBranch._id });
         toast.success('Batch created');
       }
       onClose();

@@ -75,7 +75,7 @@ export function CompletionChart() {
           )}
         </div>
         <Select value={range} onValueChange={(v) => setRange(v as Range)}>
-          <SelectTrigger className="h-8 w-36 text-xs">
+          <SelectTrigger className="h-8 min-w-[120px] text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

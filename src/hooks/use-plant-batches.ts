@@ -9,6 +9,7 @@ interface BatchListParams {
   status?: string;
   page?: number;
   limit?: number;
+  branchId?: string;
 }
 
 interface BatchListResponse {
