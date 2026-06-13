@@ -1,12 +1,15 @@
 import { useState, useMemo } from 'react';
+import { useSearch } from '@tanstack/react-router';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { useCareTasks, useTaskStats, useCompleteTask, useSkipTask } from '@/hooks/use-care-tasks';
 import { usePlantBatches } from '@/hooks/use-plant-batches';
 import { useEmployees } from '@/hooks/use-employees';
-import { CARE_TYPES, TASK_STATUSES } from '@/lib/constants';
+import { useCareTypes } from '@/hooks/use-care-types';
+import { TASK_STATUSES } from '@/lib/constants';
 import { capitalize, careTypeColor, statusColor, formatDate } from '@/lib/utils';
 import { TaskStatsBar } from '@/components/tasks/task-stats-bar';
 import { SkipDialog } from '@/components/tasks/skip-dialog';
+import { TaskDetailDialog } from '@/components/tasks/task-detail-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -24,21 +27,28 @@ import {
 import { MoreHorizontal, CheckCircle2, SkipForward } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { useBranch } from '@/hooks/use-branch';
+import type { CareTask } from '@/lib/types';
+
 export function CareTasksPage() {
+  const { currentBranch } = useBranch();
+  const searchParams = useSearch({ strict: false }) as { status?: string };
   const today = useMemo(() => new Date(), []);
   const [dateFrom, setDateFrom] = useState(format(today, 'yyyy-MM-dd'));
   const [dateTo, setDateTo] = useState(format(today, 'yyyy-MM-dd'));
-  const [status, setStatus] = useState<string>('');
+  const [status, setStatus] = useState<string>(searchParams?.status ?? '');
   const [careType, setCareType] = useState<string>('');
   const [batchId, setBatchId] = useState<string>('');
   const [assignedTo, setAssignedTo] = useState<string>('');
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [skipTaskId, setSkipTaskId] = useState<string | null>(null);
+  const [viewTask, setViewTask] = useState<CareTask | null>(null);
 
   const statsParams = {
     from: format(startOfDay(new Date(dateFrom)), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
     to: format(endOfDay(new Date(dateTo)), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
+    ...(currentBranch && { branchId: currentBranch._id }),
   };
 
   const stats = useTaskStats(statsParams);
@@ -47,16 +57,27 @@ export function CareTasksPage() {
     ...(careType && { careType }),
     ...(batchId && { batchId }),
     ...(assignedTo && { assignedTo }),
+    ...(currentBranch && { branchId: currentBranch._id }),
     from: statsParams.from,
     to: statsParams.to,
     page,
     limit: 50,
   });
 
-  const batches = usePlantBatches({ status: 'active', limit: 100 });
-  const employees = useEmployees({ limit: 100 });
+  const batches = usePlantBatches({ 
+    status: 'active', 
+    limit: 100,
+    ...(currentBranch && { branchId: currentBranch._id })
+  });
+  const employees = useEmployees({ 
+    limit: 100,
+    ...(currentBranch && { branchId: currentBranch._id })
+  });
+  const { data: careTypes } = useCareTypes();
   const complete = useCompleteTask();
   const skip = useSkipTask();
+
+  const getCareTypeName = (id: string) => careTypes?.find(c => c._id === id)?.name || id;
 
   const handleComplete = async (id: string) => {
     try {
@@ -115,28 +136,28 @@ export function CareTasksPage() {
           <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} className="w-40" />
         </div>
         <Select value={status} onValueChange={(v) => { setStatus(v === 'all' ? '' : v); setPage(1); }}>
-          <SelectTrigger className="w-32"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="min-w-[130px]"><SelectValue placeholder="All Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             {TASK_STATUSES.map((s) => <SelectItem key={s} value={s}>{capitalize(s)}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={careType} onValueChange={(v) => { setCareType(v === 'all' ? '' : v); setPage(1); }}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="Care Type" /></SelectTrigger>
+          <SelectTrigger className="min-w-[140px]"><SelectValue placeholder="All Care Types" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
-            {CARE_TYPES.map((c) => <SelectItem key={c} value={c}>{capitalize(c)}</SelectItem>)}
+            {careTypes?.map((c) => <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={batchId} onValueChange={(v) => { setBatchId(v === 'all' ? '' : v); setPage(1); }}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="Batch" /></SelectTrigger>
+          <SelectTrigger className="min-w-[160px]"><SelectValue placeholder="All Batches" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Batches</SelectItem>
             {batches.data?.batches.map((b) => <SelectItem key={b._id} value={b._id}>{b.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={assignedTo} onValueChange={(v) => { setAssignedTo(v === 'all' ? '' : v); setPage(1); }}>
-          <SelectTrigger className="w-40"><SelectValue placeholder="Employee" /></SelectTrigger>
+          <SelectTrigger className="min-w-[150px]"><SelectValue placeholder="All Employees" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Employees</SelectItem>
             {employees.data?.users.map((u) => <SelectItem key={u._id} value={u._id}>{u.name}</SelectItem>)}
@@ -198,10 +219,15 @@ export function CareTasksPage() {
                         <Checkbox checked={selected.has(task._id)} onCheckedChange={() => toggleSelect(task._id)} />
                       )}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-sm">{formatDate(task.scheduledAt)}</TableCell>
+                    <TableCell
+                      className="whitespace-nowrap text-sm cursor-pointer hover:underline"
+                      onClick={() => setViewTask(task)}
+                    >
+                      {formatDate(task.scheduledAt)}
+                    </TableCell>
                     <TableCell className="font-medium">{task.batchId.name}</TableCell>
                     <TableCell>
-                      <Badge className={careTypeColor(task.careType)}>{capitalize(task.careType)}</Badge>
+                      <Badge className={careTypeColor(task.careType)}>{getCareTypeName(task.careType)}</Badge>
                     </TableCell>
                     <TableCell>
                       <Badge className={statusColor(task.status)}>{capitalize(task.status)}</Badge>
@@ -256,6 +282,11 @@ export function CareTasksPage() {
         onClose={() => setSkipTaskId(null)}
         onConfirm={handleSkipConfirm}
         isPending={skip.isPending}
+      />
+
+      <TaskDetailDialog
+        task={viewTask}
+        onClose={() => setViewTask(null)}
       />
     </div>
   );

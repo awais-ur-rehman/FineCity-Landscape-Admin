@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useCareSchedules, useDeleteSchedule } from '@/hooks/use-care-schedules';
 import { usePlantBatches } from '@/hooks/use-plant-batches';
-import { CARE_TYPES } from '@/lib/constants';
-import { capitalize, careTypeColor } from '@/lib/utils';
+import { useCareTypes } from '@/hooks/use-care-types';
+import { careTypeColor } from '@/lib/utils';
 import { ScheduleForm } from '@/components/schedules/schedule-form';
 import { DeleteScheduleDialog } from '@/components/schedules/delete-schedule-dialog';
 import { Button } from '@/components/ui/button';
@@ -21,11 +21,15 @@ import { Plus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { CareSchedule } from '@/lib/types';
 
+import { useBranch } from '@/hooks/use-branch';
+
 export function CareSchedulesPage() {
   const [batchId, setBatchId] = useState<string>('');
   const [careType, setCareType] = useState<string>('');
   const [isActive, setIsActive] = useState<string>('true');
   const [page, setPage] = useState(1);
+  const { currentBranch } = useBranch();
+
   const [formOpen, setFormOpen] = useState(false);
   const [editSchedule, setEditSchedule] = useState<CareSchedule | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -34,13 +38,21 @@ export function CareSchedulesPage() {
     ...(batchId && { batchId }),
     ...(careType && { careType }),
     ...(isActive && { isActive }),
+    ...(currentBranch && { branchId: currentBranch._id }),
     page,
     limit: 20,
   };
 
   const { data, isLoading, error, refetch } = useCareSchedules(params);
-  const batches = usePlantBatches({ status: 'active', limit: 100 });
+  const batches = usePlantBatches({ 
+    status: 'active', 
+    limit: 100, 
+    ...(currentBranch && { branchId: currentBranch._id }) 
+  });
+  const { data: careTypes } = useCareTypes();
   const deleteSchedule = useDeleteSchedule();
+
+  const getCareTypeName = (id: string) => careTypes?.find(c => c._id === id)?.name || id;
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -91,7 +103,7 @@ export function CareSchedulesPage() {
           <SelectTrigger className="w-36"><SelectValue placeholder="Care Type" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
-            {CARE_TYPES.map((c) => <SelectItem key={c} value={c}>{capitalize(c)}</SelectItem>)}
+            {careTypes?.map((c) => <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={isActive} onValueChange={(v) => { setIsActive(v === 'all' ? '' : v); setPage(1); }}>
@@ -133,7 +145,7 @@ export function CareSchedulesPage() {
                   <TableRow key={s._id}>
                     <TableCell className="font-medium">{s.batchId.name}</TableCell>
                     <TableCell>
-                      <Badge className={careTypeColor(s.careType)}>{capitalize(s.careType)}</Badge>
+                      <Badge className={careTypeColor(s.careType)}>{getCareTypeName(s.careType)}</Badge>
                     </TableCell>
                     <TableCell>Every {s.frequencyDays} day{s.frequencyDays > 1 ? 's' : ''}</TableCell>
                     <TableCell>{s.scheduledTime}</TableCell>

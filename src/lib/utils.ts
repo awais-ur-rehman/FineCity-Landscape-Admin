@@ -35,10 +35,10 @@ export function timeAgo(date: string | Date): string {
 export function careTypeColor(type: CareType): string {
   const map: Record<CareType, string> = {
     watering: "bg-care-watering text-white",
-    fertilizer: "bg-care-fertilizer text-white",
+    fertilizing: "bg-care-fertilizing text-white",
     pruning: "bg-care-pruning text-white",
+    pest_control: "bg-care-pest-control text-white",
     repotting: "bg-care-repotting text-white",
-    general: "bg-care-general text-white",
   };
   return map[type] ?? "bg-muted text-muted-foreground";
 }
@@ -47,12 +47,24 @@ export function careTypeColor(type: CareType): string {
 export function careTypeBorder(type: CareType): string {
   const map: Record<CareType, string> = {
     watering: "border-l-care-watering",
-    fertilizer: "border-l-care-fertilizer",
+    fertilizing: "border-l-care-fertilizing",
     pruning: "border-l-care-pruning",
+    pest_control: "border-l-care-pest-control",
     repotting: "border-l-care-repotting",
-    general: "border-l-care-general",
   };
   return map[type] ?? "border-l-muted";
+}
+
+/** Human-readable care type label */
+export function careTypeLabel(type: CareType): string {
+  const map: Record<CareType, string> = {
+    watering: "Watering",
+    fertilizing: "Fertilizing",
+    pruning: "Pruning",
+    pest_control: "Pest Control",
+    repotting: "Repotting",
+  };
+  return map[type] ?? type;
 }
 
 /** Task status badge color classes */

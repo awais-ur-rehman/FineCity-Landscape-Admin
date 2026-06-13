@@ -1,16 +1,17 @@
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
 
 export const ROLES = {
-  ADMIN: 'admin',
+  SUPER_ADMIN: 'super_admin',
+  BRANCH_MANAGER: 'branch_manager',
   EMPLOYEE: 'employee',
 } as const;
 
 export const CARE_TYPES = [
   'watering',
-  'fertilizer',
+  'fertilizing',
   'pruning',
+  'pest_control',
   'repotting',
-  'general',
 ] as const;
 
 export type CareType = (typeof CARE_TYPES)[number];

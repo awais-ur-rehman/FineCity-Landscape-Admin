@@ -64,11 +64,11 @@ export function PlantBatchDetailPage() {
       <Card>
         <CardContent className="pt-6">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <InfoItem label="Plant Type" value={b.plantType} />
+            <InfoItem label="Plant Type" value={typeof b.plantType === 'object' ? b.plantType.name : b.plantType} />
             {b.scientificName && <InfoItem label="Scientific Name" value={b.scientificName} />}
-            <InfoItem label="Category" value={capitalize(b.category)} />
+            <InfoItem label="Category" value={typeof b.category === 'object' ? b.category.name : capitalize(b.category)} />
             <InfoItem label="Quantity" value={String(b.quantity)} />
-            <InfoItem label="Zone" value={b.zone} />
+            <InfoItem label="Zone" value={b.zone ? (typeof b.zone === 'object' ? (b.zone as { name?: string }).name ?? '—' : String(b.zone)) : '—'} />
             <InfoItem label="Location" value={b.location} />
             <InfoItem label="Created" value={formatDateShort(b.createdAt)} />
             {b.createdBy && <InfoItem label="Created By" value={b.createdBy.name} />}

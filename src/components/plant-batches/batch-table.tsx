@@ -19,6 +19,8 @@ import { MoreHorizontal, Pencil, Trash2, CalendarClock } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { formatDateShort, capitalize } from '@/lib/utils';
 import type { PlantBatch, Pagination } from '@/lib/types';
+import type { Zone } from '@/hooks/use-zones';
+import type { Category } from '@/hooks/use-categories';
 
 interface BatchTableProps {
   batches: PlantBatch[];
@@ -28,6 +30,8 @@ interface BatchTableProps {
   onPageChange: (page: number) => void;
   onEdit: (batch: PlantBatch) => void;
   onDelete: (id: string) => void;
+  zones?: Zone[];
+  categories?: Category[];
 }
 
 export function BatchTable({
@@ -38,8 +42,13 @@ export function BatchTable({
   onPageChange,
   onEdit,
   onDelete,
+  zones,
+  categories,
 }: BatchTableProps) {
   const navigate = useNavigate();
+
+  const getZoneName = (id: string) => zones?.find(z => z._id === id)?.name || id;
+  const getCategoryName = (id: string) => categories?.find(c => c._id === id)?.name || id;
 
   if (isLoading) {
     return (
@@ -83,12 +92,18 @@ export function BatchTable({
                   onClick={() => navigate({ to: '/plant-batches/$id', params: { id: batch._id } })}
                 >
                   <TableCell className="font-medium">{batch.name}</TableCell>
-                  <TableCell>{batch.plantType}</TableCell>
-                  <TableCell>{batch.zone}</TableCell>
+                  <TableCell>
+                    {typeof batch.plantType === 'string' ? batch.plantType : batch.plantType.name}
+                  </TableCell>
+                  <TableCell>
+                    {typeof batch.zone === 'string' ? getZoneName(batch.zone) : batch.zone.name}
+                  </TableCell>
                   <TableCell>{batch.location}</TableCell>
                   <TableCell className="text-right">{batch.quantity}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{capitalize(batch.category)}</Badge>
+                    <Badge variant="secondary">
+                      {typeof batch.category === 'string' ? getCategoryName(batch.category) : batch.category.name}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <Badge variant={batch.status === 'active' ? 'default' : 'outline'}>

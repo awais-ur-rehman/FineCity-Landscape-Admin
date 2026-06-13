@@ -1,4 +1,4 @@
-import type { CareType, TaskStatus, PlantCategory } from './constants';
+import type { CareType, TaskStatus } from './constants';
 
 /** Standard API response wrapper */
 export interface ApiResponse<T> {
@@ -25,8 +25,10 @@ export interface UserRef {
 /** Full user */
 export interface User extends UserRef {
   phone?: string;
-  role: 'admin' | 'employee';
+  role: 'super_admin' | 'branch_manager' | 'employee';
   isActive: boolean;
+  branches: Array<{ _id: string; name: string; code: string }>;
+  currentBranch?: { _id: string; name: string; code: string };
   createdAt: string;
   updatedAt: string;
 }
@@ -35,11 +37,11 @@ export interface User extends UserRef {
 export interface PlantBatch {
   _id: string;
   name: string;
-  plantType: string;
+  plantType: string | { _id: string; name: string; scientificName?: string };
   scientificName?: string;
-  category: PlantCategory;
+  category: string | { _id: string; name: string; slug: string };
   quantity: number;
-  zone: string;
+  zone: string | { _id: string; name: string; code: string };
   location: string;
   imageUrl?: string;
   notes?: string;
@@ -55,12 +57,13 @@ export interface PlantBatchPayload {
   name: string;
   plantType: string;
   scientificName?: string;
-  category: PlantCategory;
+  category: string;
   quantity: number;
   zone: string;
   location: string;
   imageUrl?: string;
   notes?: string;
+  branchId?: string;
 }
 
 /** Care schedule create/update payload */
@@ -70,6 +73,7 @@ export interface CareSchedulePayload {
   frequencyDays: number;
   scheduledTime: string;
   assignedTo: string[];
+  recommendedFertilizers?: string[];
   instructions?: string;
   startDate: string;
   isActive: boolean;
@@ -83,6 +87,7 @@ export interface CareSchedule {
   frequencyDays: number;
   scheduledTime: string;
   assignedTo: UserRef[];
+  recommendedFertilizers?: Array<{ _id: string; name: string; type: string }>;
   instructions?: string;
   startDate: string;
   isActive: boolean;
@@ -99,6 +104,7 @@ export interface CareTask {
     careType: CareType;
     scheduledTime: string;
     instructions?: string;
+    recommendedFertilizers?: Array<{ _id: string; name: string; type: string }>;
   };
   batchId: {
     _id: string;
@@ -117,6 +123,8 @@ export interface CareTask {
   skippedBy?: UserRef;
   skipReason?: string;
   notes?: string;
+  photoUrls?: string[];
+  selectedFertilizers?: Array<{ _id: string; name: string; type: string }>;
   notificationSent: boolean;
   createdAt: string;
   updatedAt: string;
@@ -141,4 +149,42 @@ export interface TaskStats {
     CareType,
     { total: number; completed: number; pending: number; missed: number; skipped: number }
   >;
+}
+
+/** Fertilizer */
+export interface Fertilizer {
+  _id: string;
+  name: string;
+  brand?: string;
+  type: 'organic' | 'chemical' | 'bio';
+  npkRatio?: string;
+  description?: string;
+  defaultDosage?: number;
+  defaultUnit?: 'ml' | 'g' | 'kg' | 'L';
+  isActive: boolean;
+  branchId: string;
+}
+
+/** Fertilizer usage item (per task completion) */
+export interface FertilizerUsageItem {
+  fertilizerId: { _id: string; name: string; type: string };
+  quantity: number;
+  unit: 'ml' | 'g' | 'kg' | 'L';
+}
+
+/** Fertilizer usage record (from FertilizerUsage collection) */
+export interface FertilizerUsageRecord {
+  _id: string;
+  taskId: { _id: string; scheduledAt: string; careType: string; status: string };
+  batchId: { _id: string; name: string; zone: string };
+  completedBy: UserRef;
+  usages: FertilizerUsageItem[];
+  notes?: string;
+  recordedAt: string;
+}
+
+/** Fertilizer usage history response */
+export interface FertilizerUsageHistoryResponse {
+  records: FertilizerUsageRecord[];
+  pagination: Pagination;
 }

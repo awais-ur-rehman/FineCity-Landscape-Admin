@@ -7,6 +7,7 @@ interface EmployeeListParams {
   search?: string;
   page?: number;
   limit?: number;
+  branchId?: string;
 }
 
 interface EmployeeListResponse {
@@ -18,6 +19,9 @@ export interface EmployeePayload {
   name: string;
   email: string;
   phone?: string;
+  role?: string;
+  branches?: string[];
+  password?: string;
 }
 
 const EMPLOYEE_KEYS = {

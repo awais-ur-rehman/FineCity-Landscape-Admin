@@ -18,22 +18,31 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { Plus, Search, MoreHorizontal, Pencil, UserX, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDateShort } from '@/lib/utils';
 import { format, subDays } from 'date-fns';
 import type { User } from '@/lib/types';
-import { EmployeeForm } from '@/components/employees/employee-form';
+import { EmployeeForm, roleLabel } from '@/components/employees/employee-form';
+
+import { useBranch } from '@/hooks/use-branch';
 
 export function EmployeesPage() {
   const [search, setSearch] = useState('');
+  const [role, setRole] = useState<string>('');
   const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editEmployee, setEditEmployee] = useState<User | null>(null);
   const [statsEmployee, setStatsEmployee] = useState<User | null>(null);
+  const { currentBranch } = useBranch();
 
   const { data, isLoading, error, refetch } = useEmployees({
     search: search || undefined,
+    role: role || undefined,
+    ...(currentBranch && { branchId: currentBranch._id }),
     page,
     limit: 20,
   });
@@ -81,14 +90,34 @@ export function EmployeesPage() {
         </Button>
       </div>
 
-      <div className="relative w-64">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search employees..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="pl-9"
-        />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative w-64">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search users..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="pl-9"
+          />
+        </div>
+
+        <Select
+          value={role}
+          onValueChange={(v) => {
+            setRole(v === 'all' ? '' : v);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="min-w-[150px]">
+            <SelectValue placeholder="All Roles" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="employee">Employee</SelectItem>
+            <SelectItem value="branch_manager">Branch Manager</SelectItem>
+            <SelectItem value="super_admin">Super Admin</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {isLoading ? (
@@ -103,6 +132,7 @@ export function EmployeesPage() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Tasks (30d)</TableHead>
@@ -121,6 +151,9 @@ export function EmployeesPage() {
                   <TableRow key={emp._id}>
                     <TableCell className="font-medium">{emp.name}</TableCell>
                     <TableCell>{emp.email}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{roleLabel(emp.role)}</Badge>
+                    </TableCell>
                     <TableCell>{emp.phone || '—'}</TableCell>
                     <TableCell>
                       <Badge variant={emp.isActive ? 'default' : 'outline'}>

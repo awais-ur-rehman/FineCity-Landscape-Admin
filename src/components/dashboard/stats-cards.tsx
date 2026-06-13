@@ -28,25 +28,29 @@ export function StatsCards({
       value: todayTotal,
       sub: `${todayCompleted} done · ${todayPending} pending`,
       icon: ClipboardList,
-      color: 'text-care-watering',
+      iconBg: 'bg-blue-50',
+      iconColor: 'text-blue-600',
     },
     {
       label: 'Active Batches',
       value: activeBatches,
       icon: Leaf,
-      color: 'text-brand',
+      iconBg: 'bg-emerald-50',
+      iconColor: 'text-emerald-600',
     },
     {
       label: 'Active Employees',
       value: activeEmployees,
       icon: Users,
-      color: 'text-care-pruning',
+      iconBg: 'bg-violet-50',
+      iconColor: 'text-violet-600',
     },
     {
       label: 'Overdue Tasks',
       value: overdue,
       icon: AlertTriangle,
-      color: overdue > 0 ? 'text-destructive' : 'text-muted-foreground',
+      iconBg: overdue > 0 ? 'bg-red-50' : 'bg-muted',
+      iconColor: overdue > 0 ? 'text-destructive' : 'text-muted-foreground',
       highlight: overdue > 0,
     },
   ];
@@ -56,21 +60,39 @@ export function StatsCards({
       {cards.map((card) => (
         <Card
           key={card.label}
-          className={cn(card.highlight && 'border-destructive/50 bg-destructive/5')}
+          className={cn(
+            'border shadow-sm',
+            card.highlight && 'border-destructive/40 bg-red-50/30',
+          )}
         >
-          <CardContent className="flex items-start justify-between pt-6">
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">{card.label}</p>
-              {isLoading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                <p className="text-3xl font-semibold">{card.value}</p>
-              )}
-              {card.sub && !isLoading && (
-                <p className="text-xs text-muted-foreground">{card.sub}</p>
-              )}
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {card.label}
+                </p>
+                <div className="mt-2">
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-14" />
+                  ) : (
+                    <p className={cn(
+                      'text-3xl font-bold tabular-nums leading-none',
+                      card.highlight ? 'text-destructive' : 'text-foreground',
+                    )}>
+                      {card.value}
+                    </p>
+                  )}
+                </div>
+                {!isLoading && (
+                  <p className="mt-1.5 min-h-[1rem] text-xs text-muted-foreground">
+                    {card.sub ?? ''}
+                  </p>
+                )}
+              </div>
+              <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', card.iconBg)}>
+                <card.icon className={cn('h-5 w-5', card.iconColor)} />
+              </div>
             </div>
-            <card.icon className={cn('h-8 w-8', card.color)} />
           </CardContent>
         </Card>
       ))}

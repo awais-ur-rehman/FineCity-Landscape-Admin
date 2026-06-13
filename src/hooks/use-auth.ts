@@ -1,26 +1,37 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
-import { TOKEN_KEYS, ROLES } from '@/lib/constants';
+import { TOKEN_KEYS } from '@/lib/constants';
+import type { ApiResponse } from '@/lib/types';
 
-interface User {
+export interface AuthUser {
   id: string;
+  _id: string;
   email: string;
   name: string;
-  role: string;
+  role: 'super_admin' | 'branch_manager' | 'employee';
+  phone?: string;
+  branches: Array<{ _id: string; name: string; code: string }>;
+  currentBranch?: { _id: string; name: string; code: string };
 }
 
 interface AuthState {
-  user: User | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
 
-function getStoredUser(): User | null {
+interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: AuthUser;
+}
+
+function getStoredUser(): AuthUser | null {
   try {
     const raw = localStorage.getItem(TOKEN_KEYS.USER);
     if (!raw) return null;
-    return JSON.parse(raw) as User;
+    return JSON.parse(raw) as AuthUser;
   } catch {
     return null;
   }
@@ -45,24 +56,13 @@ export function useAuth() {
     });
   }, []);
 
-  const sendOtp = useMutation({
-    mutationFn: async (email: string) => {
-      const { data } = await apiClient.post('/auth/send-otp', { email });
-      return data;
-    },
-  });
-
-  const verifyOtp = useMutation({
-    mutationFn: async ({ email, otp }: { email: string; otp: string }) => {
-      const { data } = await apiClient.post('/auth/verify-otp', { email, otp });
+  const login = useMutation({
+    mutationFn: async ({ email, password }: { email: string; password: string }) => {
+      const { data } = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', { email, password });
       return data;
     },
     onSuccess: (response) => {
       const { accessToken, refreshToken, user } = response.data;
-
-      if (user.role !== ROLES.ADMIN) {
-        throw new Error('Access denied. Admin only.');
-      }
 
       localStorage.setItem(TOKEN_KEYS.ACCESS, accessToken);
       localStorage.setItem(TOKEN_KEYS.REFRESH, refreshToken);
@@ -80,11 +80,12 @@ export function useAuth() {
     try {
       await apiClient.post('/auth/logout');
     } catch {
-      // Ignore errors — clear local state regardless
+      // Clear local state regardless of server response
     } finally {
       localStorage.removeItem(TOKEN_KEYS.ACCESS);
       localStorage.removeItem(TOKEN_KEYS.REFRESH);
       localStorage.removeItem(TOKEN_KEYS.USER);
+      localStorage.removeItem('fc_branch_storage');
       setAuthState({ user: null, isAuthenticated: false, isLoading: false });
       window.location.href = '/login';
     }
@@ -94,8 +95,7 @@ export function useAuth() {
     user: authState.user,
     isAuthenticated: authState.isAuthenticated,
     isLoading: authState.isLoading,
-    sendOtp,
-    verifyOtp,
+    login,
     logout,
   };
 }
